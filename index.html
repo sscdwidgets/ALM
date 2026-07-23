@@ -256,6 +256,41 @@ button.gold:hover{background:#F2AE22}
 @media (prefers-reduced-motion:reduce){.next,.next i{transition:none}.next:hover{transform:none}
   .next:hover i{transform:none}}
 
+/* Peer standing header */
+.peerhead{display:flex;gap:22px;align-items:center;flex-wrap:wrap;padding:2px 0 18px;
+  margin-bottom:16px;border-bottom:1px solid var(--line)}
+.pbig{flex:0 0 auto;text-align:center;padding:10px 20px;background:#F4F7FC;border-radius:10px}
+.pbig b{display:block;font-size:30px;font-weight:700;color:var(--navy);line-height:1;
+  font-variant-numeric:tabular-nums}
+.pbig em{display:block;font-style:normal;font-size:10.5px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--mute);margin-top:5px}
+.psum{flex:1;min-width:250px}
+.psum p{margin:0 0 7px;font-size:13.5px;color:var(--mute);line-height:1.5}
+.psum p b{color:var(--navy)}
+.pextreme{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;font-weight:500}
+.pnone{margin:0;font-size:13px;color:var(--mute)}
+
+/* Percentile strips */
+.prow{display:grid;grid-template-columns:1fr 34% 92px;gap:14px;align-items:center;
+  padding:9px 0;border-bottom:1px solid #F3F6FA}
+.prow:last-child{border-bottom:0}
+.pmeta b{display:block;font-size:13px;font-weight:500;color:var(--ink);line-height:1.3}
+.pvals{display:block;font-size:11.5px;color:var(--mute);margin-top:2px;
+  font-variant-numeric:tabular-nums}
+.pvals i{font-style:normal;color:#93A2B8}
+.prank{text-align:right;line-height:1.15}
+.prank b{display:block;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+.prank em{display:block;font-style:normal;font-size:10.5px;color:var(--mute);margin-top:1px}
+.prank.up b{color:var(--good)}
+.prank.down b{color:var(--risk)}
+.prank.flat b{color:var(--mute)}
+.lgsize{color:var(--mute)}
+@media(max-width:620px){
+  .prow{grid-template-columns:1fr 78px;gap:8px}
+  .prow svg{grid-column:1/-1;order:3}
+  .pmeta{order:1}.prank{order:2}
+}
+
 /* No-benchmark metrics: folded away so empty bars don't read as missing data. */
 .nobench{margin-top:10px;border-top:1px dashed var(--line);padding-top:9px}
 .nobench summary{font-size:11.5px;color:var(--mute);cursor:pointer;list-style:none;
@@ -278,9 +313,7 @@ button.gold:hover{background:#F2AE22}
 .legend span{display:flex;align-items:center;gap:6px}
 .legend i{display:inline-block;border-radius:2px}
 .k-you{width:3px;height:15px;background:var(--navy)}
-.k-size{width:11px;height:2px;background:var(--blue);border-radius:0}
 .k-state{width:11px;height:2px;background:var(--gold);border-radius:0}
-.k-band{width:26px;height:8px;background:linear-gradient(90deg,#FBEAEA,#FDF3E0,#E4F3EC)}
 .bandkey{margin-left:auto}
 
 /* Bullet bars */
@@ -486,12 +519,13 @@ button.gold:hover{background:#F2AE22}
     <!-- Peers -->
     <section class="pane" id="pane-peers" role="tabpanel" aria-labelledby="tab-peers" tabindex="0" hidden>
       <div class="panel">
-        <h2>Against peers</h2>
+        <h2>Percentile rank</h2>
+        <div class="peerhead" id="peerhead"></div>
         <div class="legend">
           <span><i class="k-you"></i>This bank</span>
-          <span><i class="k-size"></i><span id="lg-size">Size peers</span></span>
           <span><i class="k-state"></i><span id="lg-state">State peers</span></span>
-          <span class="bandkey"><i class="k-band"></i>Shaded band runs weak → strong</span>
+          <span id="lg-size" class="lgsize"></span>
+          <span class="bandkey">Left = weakest quartile · right = strongest</span>
         </div>
         <div id="bullets"></div>
       </div>
@@ -556,7 +590,7 @@ button.gold:hover{background:#F2AE22}
 
   <div class="foot">
     <span>Call report data via FDIC BankFind. Scores are directional and not a substitute for a full ALCO review.</span>
-    <span class="pill" id="build">ALM v3.1</span>
+    <span class="pill" id="build">ALM v3.3</span>
   </div>
 
 </div>
@@ -598,7 +632,7 @@ var FDIC = "https://banks.data.fdic.gov/api";
 function viaProxy(fdicUrl){
   return PROXY + "/?url=" + encodeURIComponent(fdicUrl);
 }
-var BUILD = "ALM v3.1 · " + new Date().toISOString().slice(0,10);
+var BUILD = "ALM v3.3 · " + new Date().toISOString().slice(0,10);
 document.getElementById("build").textContent = BUILD;
 
 var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
@@ -834,19 +868,48 @@ function chooseSuggest(i){
 
 /* FDIC's search operator is fuzzy enough on NAME; we widen it by also matching
    a wildcard prefix so "first natio" hits "FIRST NATIONAL BANK". */
+/* Straightforward prefix matching: what you type is matched against the start
+   of the bank name, then against any word within it. FDIC's NAME filter accepts
+   a trailing wildcard, so "first nat" hits "FIRST NATIONAL BANK" directly
+   instead of going through the search operator's own token logic. */
 function searchNames(q){
   var seq = ++sugSeq;
   var key = q.toLowerCase();
   if (sugCache[key]){ renderSuggest(sugCache[key], q); return; }
 
   showMsg('<span class="spin"></span>Searching…');
+
+  // Wildcard prefix on NAME. Uppercase because FDIC stores names that way.
+  // Leading wildcard too, so a query matching mid-name ("citizens" in
+  // "THE CITIZENS BANK") still comes back; ranking sorts true prefixes first.
+  var term = q.toUpperCase().replace(/["\\]/g, "");
+  var url = viaProxy(FDIC + "/institutions?filters=" +
+            encodeURIComponent('ACTIVE:1 AND NAME:*' + term + '*') +
+            "&fields=NAME,CITY,STALP,CERT,ASSET&sort_by=ASSET&sort_order=DESC&limit=60");
+
+  req(url).then(function(j){
+    if (seq !== sugSeq) return;
+    var rows = ((j && j.data) || []).map(function(r){ return r.data || r; });
+    rows = rankMatches(rows, q);
+    sugCache[key] = rows;
+    renderSuggest(rows, q);
+  }).catch(function(e){
+    if (seq !== sugSeq) return;
+    // Wildcard syntax rejected — fall back to the search operator.
+    fallbackSearch(q, seq);
+  });
+}
+
+/* If the wildcard filter isn't supported, use the search operator instead. */
+function fallbackSearch(q, seq){
   var url = viaProxy(FDIC + "/institutions?search=NAME:" + encodeURIComponent(q) +
             "&filters=ACTIVE:1&fields=NAME,CITY,STALP,CERT,ASSET" +
-            "&sort_by=ASSET&sort_order=DESC&limit=10");
+            "&sort_by=ASSET&sort_order=DESC&limit=60");
   req(url).then(function(j){
-    if (seq !== sugSeq) return;   // a newer keystroke already fired
+    if (seq !== sugSeq) return;
     var rows = ((j && j.data) || []).map(function(r){ return r.data || r; });
-    sugCache[key] = rows;
+    rows = rankMatches(rows, q);
+    sugCache[q.toLowerCase()] = rows;
     renderSuggest(rows, q);
   }).catch(function(e){
     if (seq !== sugSeq) return;
@@ -854,13 +917,41 @@ function searchNames(q){
   });
 }
 
+/* Order by how directly the name matches what was typed:
+   1. name starts with the query
+   2. a word inside the name starts with the query
+   3. the query appears anywhere
+   Ties break on asset size, so the recognizable bank surfaces first. */
+function rankMatches(rows, q){
+  var needle = q.toLowerCase().trim();
+  if (!needle) return rows;
+  return rows.map(function(r){
+    var name = String(r.NAME || "").toLowerCase();
+    var tier = 3;
+    if (name.indexOf(needle) === 0) tier = 0;
+    else {
+      var words = name.split(/[^a-z0-9]+/);
+      for (var i=0;i<words.length;i++){
+        if (words[i].indexOf(needle) === 0){ tier = 1; break; }
+      }
+      if (tier === 3 && name.indexOf(needle) > 0) tier = 2;
+    }
+    return {r:r, tier:tier, asset: r.ASSET || 0};
+  }).filter(function(x){
+    return x.tier < 3;          // drop anything that doesn't actually contain it
+  }).sort(function(a,b){
+    if (a.tier !== b.tier) return a.tier - b.tier;
+    return b.asset - a.asset;
+  }).slice(0, 12).map(function(x){ return x.r; });
+}
+
 nameInput.addEventListener("input", function(){
   var q = nameInput.value.trim();
   clearTimeout(sugTimer);
-  if (q.length < 3){ closeSuggest(); lastQuery = q; return; }
+  if (q.length < 2){ closeSuggest(); lastQuery = q; return; }
   if (q === lastQuery) return;
   lastQuery = q;
-  sugTimer = setTimeout(function(){ searchNames(q); }, 260);
+  sugTimer = setTimeout(function(){ searchNames(q); }, 200);
 });
 
 nameInput.addEventListener("keydown", function(e){
@@ -890,8 +981,8 @@ document.addEventListener("click", function(e){
 $("load").addEventListener("click", function(){
   var c = $("cert").value.trim(), n = nameInput.value.trim();
   if (c) loadByCert(c);
-  else if (n.length >= 3) searchNames(n);
-  else setStatus("Enter a certificate number, or type at least 3 letters of a bank name.", true);
+  else if (n.length >= 2) searchNames(n);
+  else setStatus("Enter a certificate number, or type at least 2 letters of a bank name.", true);
 });
 $("cert").addEventListener("keydown", function(e){ if(e.key==="Enter") $("load").click(); });
 
@@ -912,6 +1003,37 @@ var PEER_METRICS = ["nim","ldr","noninterest","timedeps","brokered","borrow","on
 
 var peerCache = {};          // key -> {n, med:{...}} or {error:...}
 var sizePeer = null, statePeer = null;
+
+/* Linear-interpolated quantile over a pre-sorted array. */
+function quantile(sorted, q){
+  if (!sorted || !sorted.length) return null;
+  if (sorted.length === 1) return sorted[0];
+  var pos = (sorted.length - 1) * q;
+  var lo = Math.floor(pos), hi = Math.ceil(pos);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+}
+
+/* Where a value sits in the distribution, 0–100. Uses midrank so ties don't
+   push a bank to one extreme. */
+function pctRank(sorted, v){
+  if (!sorted || !sorted.length || v == null || !isFinite(v)) return null;
+  var below = 0, equal = 0;
+  for (var i=0;i<sorted.length;i++){
+    if (sorted[i] < v) below++;
+    else if (sorted[i] === v) equal++;
+    else break;
+  }
+  return ((below + equal/2) / sorted.length) * 100;
+}
+
+/* Percentile of *goodness*: flips when a lower value is better, so 90 always
+   means "better than 90% of peers" regardless of metric direction. */
+function goodRank(sorted, v, m){
+  var r = pctRank(sorted, v);
+  if (r == null) return null;
+  return (m.best < m.worst) ? 100 - r : r;
+}
 
 function median(arr){
   var a = arr.filter(function(x){ return x != null && isFinite(x); }).sort(function(p,q){ return p-q; });
@@ -973,11 +1095,17 @@ function fetchPeers(filters, key){
       var r = peerRatios(f);
       if (r) ratios.push(r);
     });
-    var med = {};
+    // Keep the full sorted distribution per metric — percentile rank and
+    // quartiles both need it, and a median alone throws that away.
+    var dist = {}, med = {};
     PEER_METRICS.forEach(function(m){
-      med[m] = median(ratios.map(function(r){ return r[m]; }));
+      var a = ratios.map(function(r){ return r[m]; })
+                    .filter(function(x){ return x != null && isFinite(x); })
+                    .sort(function(p,q){ return p-q; });
+      dist[m] = a;
+      med[m]  = quantile(a, 0.5);
     });
-    var out = {n: ratios.length, med: med};
+    var out = {n: ratios.length, med: med, dist: dist};
     peerCache[key] = out;
     return out;
   }).catch(function(e){
@@ -1067,66 +1195,55 @@ function peerMark(v, m, peer){
   return better ? "up" : "down";
 }
 
-/* Bullet bar: shaded weak→strong band, peer ticks, bank marker. */
-function bullet(m, val, sizeV, stateV){
-  var W = 100, H = 26, PAD = 1.5;
-  // Domain spans the scoring band plus 15% headroom on each side. An out-of-band
-  // value extends the domain by a full pad past itself, so the marker never sits
-  // flush against the edge with the band stranded away from it.
-  var lo = Math.min(m.best, m.worst), hi = Math.max(m.best, m.worst);
-  var pad = (hi - lo) * 0.15;
-  var d0 = lo - pad, d1 = hi + pad;
-  [val, sizeV, stateV].forEach(function(x){
-    if (x == null || !isFinite(x)) return;
-    if (x < d0) d0 = x - pad;
-    if (x > d1) d1 = x + pad;
-  });
-  // Keep every glyph fully inside the viewBox: the widest is the bank marker
-  // at 1.8 units, so reserve half of that plus the base padding.
-  var EDGE = PAD + 1.0;
-  function x(u){
-    var p = PAD + ((u - d0) / (d1 - d0)) * (W - PAD*2);
-    return Math.max(EDGE, Math.min(W - EDGE, p));
+/* Percentile strip: quartile blocks with the bank's rank marked. Answers
+   "where do I sit in this peer set" rather than "how far from an ideal". */
+function ordinal(n){
+  var s = ["th","st","nd","rd"], v = n % 100;
+  return n + (s[(v-20)%10] || s[v] || s[0]);
+}
+
+function pstrip(m, val, sizeD, stateD, sizeMed){
+  var rank  = goodRank(sizeD, val, m);
+  var srank = goodRank(stateD, val, m);
+  if (rank == null && srank == null) return "";
+
+  var W = 100, H = 30;
+  var blocks = "", tints = ["#FBEAEA","#FBEFE0","#EDF5EC","#E1F2E9"];
+  for (var i=0;i<4;i++){
+    blocks += '<rect x="' + (i*25) + '" y="9" width="25" height="13" fill="' + tints[i] + '"/>';
   }
+  var divs = "";
+  [25,50,75].forEach(function(p){
+    divs += '<rect x="' + (p-0.15) + '" y="9" width="0.3" height="13" fill="#fff"/>';
+  });
 
-  // Gradient runs worst → best in domain order, so flip when best < worst.
-  var gid = "g_" + m.id;
-  var lowIsBest = m.best < m.worst;
-  var stops = lowIsBest
-    ? '<stop offset="0" stop-color="#E4F3EC"/><stop offset="0.5" stop-color="#FDF3E0"/><stop offset="1" stop-color="#FBEAEA"/>'
-    : '<stop offset="0" stop-color="#FBEAEA"/><stop offset="0.5" stop-color="#FDF3E0"/><stop offset="1" stop-color="#E4F3EC"/>';
+  function cx(p){ return Math.max(1.2, Math.min(W-1.2, p)); }
 
-  var bandX0 = x(Math.min(m.best,m.worst)), bandX1 = x(Math.max(m.best,m.worst));
-  var s = sc(val, m.best, m.worst);
-  var mark = peerMark(val, m, sizeV);
-  var arrow = mark === "up" ? "▲" : mark === "down" ? "▼" : mark === "flat" ? "▬" : "";
+  var stateTick = (srank == null) ? "" :
+    '<rect x="' + (cx(srank)-0.35).toFixed(2) + '" y="6" width="0.7" height="19" fill="var(--gold)"/>';
+  var youMark = (rank == null) ? "" :
+    '<rect x="' + (cx(rank)-0.85).toFixed(2) + '" y="4" width="1.7" height="22" fill="var(--navy)" rx="0.5"/>';
 
-  var svg =
-    '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" width="100%" height="' + H + '" role="img" ' +
-      'aria-label="' + m.label + ': ' + (val==null?"no value":fmt(val,1)+m.unit) + '">' +
-    '<defs><linearGradient id="' + gid + '" x1="0" x2="1">' + stops + '</linearGradient></defs>' +
-    '<rect x="' + bandX0.toFixed(2) + '" y="7" width="' + (bandX1-bandX0).toFixed(2) + '" height="12" ' +
-      'fill="url(#' + gid + ')" rx="1.5"/>' +
-    // state peer tick (gold)
-    (stateV==null?"":'<rect x="' + (x(stateV)-0.4).toFixed(2) + '" y="4" width="0.8" height="18" fill="var(--gold)"/>') +
-    // size peer tick (blue)
-    (sizeV==null?"":'<rect x="' + (x(sizeV)-0.4).toFixed(2) + '" y="4" width="0.8" height="18" fill="var(--blue)"/>') +
-    // bank marker (navy)
-    (val==null?"":'<rect x="' + (x(val)-0.9).toFixed(2) + '" y="1" width="1.8" height="24" fill="var(--navy)" rx="0.6"/>') +
-    '</svg>';
+  var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" width="100%" ' +
+    'height="' + H + '" role="img" aria-label="' + esc(m.label) + ': ' +
+    (rank==null ? "unranked" : Math.round(rank) + "th percentile among size peers") + '">' +
+    blocks + divs + stateTick + youMark + '</svg>';
 
-  var hasPeer = (sizeV != null && isFinite(sizeV)) || (stateV != null && isFinite(stateV));
-  var peerTxt = hasPeer
-    ? arrow + ' vs ' + fmt(sizeV,1) + m.unit + ' size · ' + fmt(stateV,1) + m.unit + ' ' + $("state").value
-    : 'no peer benchmark';
+  var band = rank == null ? "" :
+    rank >= 75 ? "top quartile" :
+    rank >= 50 ? "above median" :
+    rank >= 25 ? "below median" : "bottom quartile";
+  var cls = rank == null ? "flat" : rank >= 50 ? "up" : "down";
 
-  return '<div class="brow"><div>' +
-    '<div class="blabel"><b>' + m.label + '</b>' +
-      '<span class="' + (hasPeer ? (mark||"flat") : "flat") + '">' + peerTxt + '</span></div>' +
-    svg + '</div>' +
-    '<div class="bnum" style="color:' + color(s) + '">' + (val==null?"—":fmt(val,1)+m.unit) +
-      '<small>' + (s==null?"":Math.round(s)+"/100") + '</small></div>' +
-    '</div>';
+  return '<div class="prow">' +
+    '<div class="pmeta"><b>' + esc(m.label) + '</b>' +
+      '<span class="pvals">' + (val==null?"—":fmt(val,1)+m.unit) +
+        (sizeMed != null ? ' <i>· peer median ' + fmt(sizeMed,1) + m.unit + '</i>' : '') +
+      '</span></div>' +
+    svg +
+    '<div class="prank ' + cls + '">' +
+      (rank == null ? "—" : '<b>' + ordinal(Math.round(rank)) + '</b><em>' + band + '</em>') +
+    '</div></div>';
 }
 
 /* Five-quarter trends from FDIC history. */
@@ -1517,42 +1634,70 @@ $("run").addEventListener("click", function(){
     if (p.error) return base + " (unavailable)";
     return base + " (n=" + p.n + ")";
   }
-  $("lg-size").textContent  = peerLabel(sizePeer, bandLabel);
-  $("lg-state").textContent = peerLabel(statePeer, st);
+  $("lg-size").textContent  = "Ranked within " + peerLabel(sizePeer, bandLabel);
+  $("lg-state").textContent = peerLabel(statePeer, st + " peers");
+
+  // Peer standing: overall percentile is the mean of per-metric ranks, which
+  // avoids letting one wide-spread metric dominate.
+  var sizeD  = (sizePeer  && sizePeer.dist)  || {};
+  var stateD = (statePeer && statePeer.dist) || {};
+  var ranks = [];
+  PILLARS.forEach(function(p){
+    p.metrics.forEach(function(m){
+      var r = goodRank(sizeD[m.id], v[m.id], m);
+      if (r != null) ranks.push({m:m, r:r, v:v[m.id]});
+    });
+  });
+  var overall = ranks.length ? avg(ranks.map(function(x){ return x.r; })) : null;
+
+  var head = $("peerhead");
+  if (overall == null){
+    head.innerHTML = '<p class="pnone">Peer benchmarks unavailable for this group.</p>';
+  } else {
+    var sorted = ranks.slice().sort(function(a,b){ return b.r - a.r; });
+    var best = sorted[0], worst = sorted[sorted.length-1];
+    var verdict = overall >= 75 ? "top quartile" : overall >= 50 ? "above median"
+                : overall >= 25 ? "below median" : "bottom quartile";
+    head.innerHTML =
+      '<div class="pbig"><b>' + ordinal(Math.round(overall)) + '</b>' +
+        '<em>percentile overall</em></div>' +
+      '<div class="psum"><p>Across ' + ranks.length + ' benchmarked metric' +
+        (ranks.length===1?'':'s') + ', this bank sits <b>' + verdict + '</b> for ' +
+        esc(bandLabel.toLowerCase()) + ' banks' +
+        (statePeer && statePeer.n ? ' and is compared against ' + statePeer.n + ' in ' + st : '') + '.</p>' +
+        '<p class="pextreme"><span class="up">Strongest: ' + esc(best.m.label) + ' (' +
+          ordinal(Math.round(best.r)) + ')</span>' +
+        '<span class="down">Weakest: ' + esc(worst.m.label) + ' (' +
+          ordinal(Math.round(worst.r)) + ')</span></p>' +
+      '</div>';
+  }
 
   $("bullets").innerHTML = PILLARS.map(function(p){
     var withPeer = [], without = [];
     p.metrics.forEach(function(m){
-      var sv = sizeP[m.id], tv = stateP[m.id];
-      var has = (sv != null && isFinite(sv)) || (tv != null && isFinite(tv));
-      (has ? withPeer : without).push(m);
+      var d = sizeD[m.id];
+      (d && d.length ? withPeer : without).push(m);
     });
-    if (!withPeer.length && !without.length) return "";
 
     var rows = withPeer.map(function(m){
-      return bullet(m, v[m.id], sizeP[m.id], stateP[m.id]);
+      return pstrip(m, v[m.id], sizeD[m.id], stateD[m.id], sizeP[m.id]);
     }).join("");
 
-    // Metrics with no published peer set are folded away — they'd otherwise
-    // render as empty bars and read like missing data.
     var extra = "";
     if (without.length){
-      var scoredOnly = without.filter(function(m){ return v[m.id] != null; });
+      var scored = without.filter(function(m){ return v[m.id] != null; });
       extra = '<details class="nobench"><summary>' + without.length +
         ' metric' + (without.length===1?'':'s') + ' with no published peer set' +
-        (scoredOnly.length ? ' · ' + scoredOnly.length + ' still scored' : '') +
-        '</summary>' +
+        (scored.length ? ' · ' + scored.length + ' still scored' : '') + '</summary>' +
         without.map(function(m){
           var val = v[m.id], s = sc(val, m.best, m.worst);
-          return '<div class="nbrow"><span class="lbl">' + m.label + '</span>' +
+          return '<div class="nbrow"><span class="lbl">' + esc(m.label) + '</span>' +
                  '<span class="num" style="color:' + color(s) + '">' +
                  (val==null?"—":fmt(val,1)+m.unit) +
                  (s==null?"":' <small>' + Math.round(s) + '/100</small>') + '</span></div>';
         }).join("") + '</details>';
     }
-    if (!withPeer.length && !rows) {
-      return '<div class="bgroup"><h5>' + p.name + '</h5>' + extra + '</div>';
-    }
+    if (!rows && !extra) return "";
     return '<div class="bgroup"><h5>' + p.name + '</h5>' + rows + extra + '</div>';
   }).join("");
 
