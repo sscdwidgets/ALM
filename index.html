@@ -303,8 +303,13 @@ button.gold:hover{background:#F2AE22}
   </div>
 
   <!-- Lookup -->
-  <div class="panel">
-    <h2>Find your bank</h2>
+  <div class="panel collapse lookuppanel" id="lookuppanel">
+    <button class="chead" id="lookuptoggle" aria-expanded="true" aria-controls="lookupbody">
+      <span class="ctitle">Find your bank</span>
+      <span class="csum" id="lookupsum"></span>
+      <span class="carrow" aria-hidden="true">▾</span>
+    </button>
+    <div class="cbody open" id="lookupbody">
     <div class="lookup">
       <div class="field ac">
         <label for="bankname">Bank name</label>
@@ -321,6 +326,7 @@ button.gold:hover{background:#F2AE22}
     </div>
     <div class="status" id="status" role="status" aria-live="polite"></div>
     <div class="bankline" id="bankline"></div>
+    </div>
   </div>
 
   <!-- Progress -->
@@ -692,10 +698,18 @@ function loadByCert(cert){
       setInputs(false);
       setFiled(false);
       updateInputSummary();
+      // Lookup is done — roll it up and carry the bank in its header.
+      $("lookupsum").textContent = (d.NAME || "Bank") + " · Cert " + cert +
+        (d.STALP ? " · " + d.STALP : "");
+      $("lookuppanel").classList.add("complete");
+      setLookup(false);
       setStep(1);
       $("run").click();
     });
   }).catch(function(e){
+    $("lookuppanel").classList.remove("complete");
+    $("lookupsum").textContent = "";
+    setLookup(true);
     setStatus(e.message || "Couldn't reach the FDIC service. Enter values manually below.", true);
   });
 }
@@ -1154,6 +1168,16 @@ function setStep(n){
   $("rail").setAttribute("aria-label", "Step " + n + " of " + lis.length);
 }
 
+function setLookup(open){
+  $("lookupbody").classList.toggle("open", open);
+  $("lookuptoggle").setAttribute("aria-expanded", open ? "true" : "false");
+  resize();
+}
+
+$("lookuptoggle").addEventListener("click", function(){
+  setLookup(!$("lookupbody").classList.contains("open"));
+});
+
 function inputsOpen(){ return $("inputbody").classList.contains("open"); }
 
 function setInputs(open){
@@ -1192,7 +1216,7 @@ function updateInputSummary(){
   } else if (left > 0){
     sum.textContent = left + " field" + (left===1?"":"s") + " left · " + n + " of " + MANUAL.length + " entered";
   } else {
-    sum.textContent = "All five entered — score is complete";
+    sum.textContent = "All five entered";
   }
   $("inputpanel").classList.toggle("complete", left === 0);
   var note = $("rerunnote");
