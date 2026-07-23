@@ -507,7 +507,8 @@ button.gold:hover{background:#F2AE22}
           <option value="500_1b" selected>$500M – $1B</option>
           <option value="1b_3b">$1B – $3B</option>
           <option value="3b_10b">$3B – $10B</option>
-          <option value="o10b">Over $10B</option>
+          <option value="10b_25b">$10B – $25B</option>
+          <option value="o25b">Over $25B</option>
         </select>
       </div>
       <div class="field"><label for="state">State peer group</label>
@@ -667,7 +668,7 @@ button.gold:hover{background:#F2AE22}
 
   <div class="foot">
     <span>Call report data via FDIC BankFind. Scores are directional and not a substitute for a full ALCO review.</span>
-    <span class="pill" id="build">ALM v3.4</span>
+    <span class="pill" id="build">ALM v3.5</span>
   </div>
 
 </div>
@@ -709,7 +710,7 @@ var FDIC = "https://banks.data.fdic.gov/api";
 function viaProxy(fdicUrl){
   return PROXY + "/?url=" + encodeURIComponent(fdicUrl);
 }
-var BUILD = "ALM v3.4 · " + new Date().toISOString().slice(0,10);
+var BUILD = "ALM v3.5 · " + new Date().toISOString().slice(0,10);
 document.getElementById("build").textContent = BUILD;
 
 var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
@@ -757,7 +758,8 @@ function fill(vals){
 function autoSizeBand(assets){
   if (!assets) return;
   var m = assets/1000; // $000 -> $MM
-  var band = m<250?"u250":m<500?"250_500":m<1000?"500_1b":m<3000?"1b_3b":m<10000?"3b_10b":"o10b";
+  var band = m<250?"u250":m<500?"250_500":m<1000?"500_1b":m<3000?"1b_3b":
+             m<10000?"3b_10b":m<25000?"10b_25b":"o25b";
   $("sizeband").value = band;
 }
 
@@ -1071,7 +1073,8 @@ var BANDS = {
   "500_1b": [500000, 1000000],
   "1b_3b":  [1000000, 3000000],
   "3b_10b": [3000000, 10000000],
-  o10b:     [10000000, 100000000000]
+  "10b_25b":[10000000, 25000000],
+  o25b:     [25000000, 100000000000]
 };
 
 // Only these are derivable from filed data. The five manual metrics have no
