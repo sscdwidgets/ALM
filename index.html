@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ALM Scorecard</title>
+<style>
+@font-face{font-family:'Cera Pro';src:url('https://sscdwidgets.github.io/fonts/CeraPro-Regular.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Cera Pro';src:url('https://sscdwidgets.github.io/fonts/CeraPro-Medium.woff2') format('woff2');font-weight:500;font-display:swap}
+@font-face{font-family:'Cera Pro';src:url('https://sscdwidgets.github.io/fonts/CeraPro-Bold.woff2') format('woff2');font-weight:700;font-display:swap}
+
+:root{
+  --navy:#002D72; --gold:#FFBF3F; --blue:#0960BB;
+  --ink:#0A1730; --mute:#5A6B85; --line:#DCE3ED;
+  --bg:#F6F8FB; --card:#FFFFFF;
+  --good:#1B7F5A; --warn:#B7791F; --risk:#B23B3B;
+  --r:10px;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:20px;background:var(--bg);color:var(--ink);
+  font-family:'Cera Pro',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  font-size:15px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto}
+
+/* Header */
+.hdr{border-left:5px solid var(--gold);padding-left:16px;margin-bottom:22px}
+.hdr .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);font-weight:700}
+.hdr h1{margin:4px 0 4px;font-size:27px;font-weight:700;color:var(--navy);letter-spacing:-.015em}
+.hdr p{margin:0;color:var(--mute);font-size:14px;max-width:62ch}
+
+/* Panels */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-bottom:18px}
+.panel h2{margin:0 0 14px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);font-weight:700}
+
+/* Lookup */
+.lookup{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);font-weight:500}
+input,select{font-family:inherit;font-size:15px;padding:9px 11px;border:1px solid var(--line);
+  border-radius:6px;background:#fff;color:var(--ink);width:100%}
+input:focus,select:focus{outline:2px solid var(--blue);outline-offset:1px;border-color:var(--blue)}
+.lookup .field{flex:1;min-width:190px}
+button{font-family:inherit;font-size:14px;font-weight:700;padding:10px 20px;border:0;border-radius:6px;
+  background:var(--navy);color:#fff;cursor:pointer;white-space:nowrap}
+button:hover{background:#013a91}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+button.ghost{background:transparent;color:var(--blue);border:1px solid var(--line);font-weight:500}
+button.ghost:hover{background:#EEF3FA}
+button:disabled{opacity:.5;cursor:not-allowed}
+
+.status{margin-top:11px;font-size:13px;color:var(--mute);min-height:19px}
+.status.err{color:var(--risk)}
+.bankline{margin-top:11px;padding:11px 14px;background:#EEF3FA;border-radius:6px;font-size:14px;display:none}
+.bankline strong{color:var(--navy)}
+.bankline span{color:var(--mute);font-size:13px}
+
+/* Inputs grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px}
+.sub{grid-column:1/-1;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--blue);font-weight:700;padding-bottom:5px;border-bottom:1px solid var(--line);margin-top:4px}
+.sub:first-child{margin-top:0}
+.hint{font-size:11px;color:var(--mute)}
+.edited input{border-color:var(--gold);background:#FFFDF6}
+
+/* Score */
+.scorehead{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
+.dial{flex:0 0 auto;position:relative;width:132px;height:132px}
+.dial svg{transform:rotate(-90deg)}
+.dial .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.dial .val b{font-size:34px;font-weight:700;line-height:1;color:var(--navy)}
+.dial .val em{font-style:normal;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-top:3px}
+.verdict{flex:1;min-width:230px}
+.verdict .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  padding:4px 11px;border-radius:20px;margin-bottom:8px}
+.verdict h3{margin:0 0 6px;font-size:20px;color:var(--navy);font-weight:700}
+.verdict p{margin:0;color:var(--mute);font-size:14px}
+.t-good{background:#E4F3EC;color:var(--good)}
+.t-warn{background:#FDF3E0;color:var(--warn)}
+.t-risk{background:#FBEAEA;color:var(--risk)}
+
+/* Pillars */
+.pillars{display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:14px;margin-top:20px}
+.pillar{border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.pillar .ptop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.pillar h4{margin:0;font-size:14px;font-weight:700;color:var(--navy)}
+.pillar .pscore{font-size:20px;font-weight:700}
+.pillar .pweight{font-size:11px;color:var(--mute);margin-bottom:11px}
+.bar{height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:13px}
+.bar i{display:block;height:100%;border-radius:3px;transition:width .5s ease}
+
+/* Metric rows */
+.m{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:7px 0;border-bottom:1px solid #F0F3F8;font-size:13px}
+.m:last-child{border-bottom:0}
+.m .lbl{color:var(--mute);flex:1}
+.m .num{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.m .peers{font-size:11px;color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
+
+/* Legend */
+.legend{display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:11.5px;color:var(--mute);margin-bottom:16px}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{display:inline-block;border-radius:2px}
+.k-you{width:3px;height:15px;background:var(--navy)}
+.k-size{width:11px;height:2px;background:var(--blue);border-radius:0}
+.k-state{width:11px;height:2px;background:var(--gold);border-radius:0}
+.k-band{width:26px;height:8px;background:linear-gradient(90deg,#FBEAEA,#FDF3E0,#E4F3EC)}
+.bandkey{margin-left:auto}
+
+/* Bullet bars */
+.bgroup{margin-bottom:20px}
+.bgroup:last-child{margin-bottom:0}
+.bgroup > h5{margin:0 0 11px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--blue);font-weight:700;padding-bottom:5px;border-bottom:1px solid var(--line)}
+.brow{display:grid;grid-template-columns:1fr 62px;gap:12px;align-items:center;padding:8px 0}
+.blabel{font-size:12.5px;color:var(--mute);margin-bottom:5px;display:flex;justify-content:space-between;gap:8px}
+.blabel b{color:var(--ink);font-weight:500}
+.bnum{font-size:15px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--navy)}
+.bnum small{display:block;font-size:10px;font-weight:500;color:var(--mute);letter-spacing:.04em}
+.up{color:var(--good)} .down{color:var(--risk)} .flat{color:var(--mute)}
+
+/* Trends */
+.tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px}
+.tcard{border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.tcard .ttop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
+.tcard h4{margin:0;font-size:13px;font-weight:700;color:var(--navy)}
+.tcard .tnow{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--navy)}
+.tcard .tdelta{font-size:11px;font-weight:700;margin-bottom:9px}
+.trendnote{font-size:11.5px;color:var(--mute);margin:14px 0 0}
+.nodata{font-size:13px;color:var(--mute);padding:6px 0}
+
+/* Actions */
+.actions li{margin-bottom:11px;font-size:14px;color:var(--ink);line-height:1.55}
+.actions ul{margin:0;padding-left:19px}
+.actions li b{color:var(--navy)}
+
+.foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
+  font-size:11px;color:var(--mute);padding-top:6px}
+.pill{background:#E9EEF6;color:var(--navy);border-radius:20px;padding:3px 10px;font-weight:700;letter-spacing:.04em}
+.hidden{display:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media(max-width:560px){body{padding:14px}.hdr h1{font-size:22px}.scorehead{gap:16px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hdr">
+    <div class="eyebrow">SouthState Correspondent</div>
+    <h1>ALM Scorecard</h1>
+    <p>Pull a bank's latest call report by FDIC certificate number, adjust any input, and see a composite
+       asset-liability score across rate sensitivity, funding mix, and liquidity — benchmarked against both
+       asset-size and in-state peers.</p>
+  </div>
+
+  <!-- Lookup -->
+  <div class="panel">
+    <h2>Find the bank</h2>
+    <div class="lookup">
+      <div class="field">
+        <label for="cert">FDIC certificate number</label>
+        <input id="cert" inputmode="numeric" placeholder="e.g. 12345" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="bankname">or search by name</label>
+        <input id="bankname" placeholder="e.g. First Community Bank" autocomplete="off">
+      </div>
+      <button id="load">Load call report</button>
+      <button id="demo" class="ghost">Use sample data</button>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="bankline" id="bankline"></div>
+  </div>
+
+  <!-- Inputs -->
+  <div class="panel">
+    <h2>Inputs <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:400;">— gold border means you've overridden the filed value</span></h2>
+    <div class="grid" id="inputs">
+
+      <div class="sub">Balance sheet</div>
+      <div class="field"><label for="assets">Total assets ($000)</label><input id="assets" class="ov" type="number" step="1"></div>
+      <div class="field"><label for="loans">Total loans ($000)</label><input id="loans" class="ov" type="number" step="1"></div>
+      <div class="field"><label for="secs">Securities ($000)</label><input id="secs" class="ov" type="number" step="1"></div>
+      <div class="field"><label for="deps">Total deposits ($000)</label><input id="deps" class="ov" type="number" step="1"></div>
+
+      <div class="sub">Rate sensitivity</div>
+      <div class="field"><label for="ea3y">Earning assets repricing &gt; 3 yrs (%)</label><input id="ea3y" class="ov" type="number" step="0.01"></div>
+      <div class="field"><label for="liab1y">Liabilities repricing &lt; 1 yr (%)</label><input id="liab1y" class="ov" type="number" step="0.01"></div>
+      <div class="field"><label for="aoci">AOCI as % of tier 1 capital</label><input id="aoci" class="ov" type="number" step="0.01"><div class="hint">Negative = unrealized loss</div></div>
+      <div class="field"><label for="nim">Net interest margin (%)</label><input id="nim" class="ov" type="number" step="0.01"></div>
+
+      <div class="sub">Funding mix &amp; deposit beta</div>
+      <div class="field"><label for="noninterest">Noninterest-bearing deposits (% of total)</label><input id="noninterest" class="ov" type="number" step="0.01"></div>
+      <div class="field"><label for="timedeps">Time deposits (% of total)</label><input id="timedeps" class="ov" type="number" step="0.01"></div>
+      <div class="field"><label for="uninsured">Uninsured deposits (% of total)</label><input id="uninsured" class="ov" type="number" step="0.01"></div>
+      <div class="field"><label for="beta">Cumulative deposit beta (%)</label><input id="beta" class="ov" type="number" step="0.01"><div class="hint">Change in cost of deposits ÷ change in fed funds</div></div>
+
+      <div class="sub">Liquidity</div>
+      <div class="field"><label for="ldr">Loan-to-deposit ratio (%)</label><input id="ldr" class="ov" type="number" step="0.01"></div>
+      <div class="field"><label for="onhand">Cash &amp; unpledged securities (% of assets)</label><input id="onhand" class="ov" type="number" step="0.01"></div>
+      <div class="field"><label for="brokered">Brokered &amp; listing-service deposits (% of total)</label><input id="brokered" class="ov" type="number" step="0.01"></div>
+      <div class="field"><label for="borrow">Borrowings (% of assets)</label><input id="borrow" class="ov" type="number" step="0.01"></div>
+
+      <div class="sub">Peer groups</div>
+      <div class="field"><label for="sizeband">Asset-size peer group</label>
+        <select id="sizeband">
+          <option value="u250">Under $250M</option>
+          <option value="250_500">$250M – $500M</option>
+          <option value="500_1b" selected>$500M – $1B</option>
+          <option value="1b_3b">$1B – $3B</option>
+          <option value="3b_10b">$3B – $10B</option>
+          <option value="o10b">Over $10B</option>
+        </select>
+      </div>
+      <div class="field"><label for="state">State peer group</label>
+        <select id="state"></select>
+      </div>
+    </div>
+    <div style="margin-top:16px"><button id="run">Score this balance sheet</button></div>
+  </div>
+
+  <!-- Results -->
+  <div id="results" class="hidden">
+
+    <div class="panel">
+      <h2>Composite score</h2>
+      <div class="scorehead">
+        <div class="dial">
+          <svg width="132" height="132" viewBox="0 0 132 132">
+            <circle cx="66" cy="66" r="56" fill="none" stroke="#E4EAF3" stroke-width="12"/>
+            <circle id="arc" cx="66" cy="66" r="56" fill="none" stroke="var(--blue)" stroke-width="12"
+                    stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="352"/>
+          </svg>
+          <div class="val"><b id="total">–</b><em>out of 100</em></div>
+        </div>
+        <div class="verdict">
+          <span class="tag" id="tag">–</span>
+          <h3 id="headline">–</h3>
+          <p id="summary">–</p>
+        </div>
+      </div>
+      <div class="pillars" id="pillars"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Against peers</h2>
+      <div class="legend">
+        <span><i class="k-you"></i>This bank</span>
+        <span><i class="k-size"></i><span id="lg-size">Size peers</span></span>
+        <span><i class="k-state"></i><span id="lg-state">State peers</span></span>
+        <span class="bandkey"><i class="k-band"></i>Shaded band runs weak → strong</span>
+      </div>
+      <div id="bullets"></div>
+    </div>
+
+    <div class="panel" id="trendpanel">
+      <h2>Five-quarter trend</h2>
+      <div id="trends"></div>
+      <p class="trendnote" id="trendnote"></p>
+    </div>
+
+    <div class="panel actions">
+      <h2>Where to focus</h2>
+      <ul id="actionlist"></ul>
+    </div>
+
+  </div>
+
+  <div class="foot">
+    <span>Call report data via FDIC BankFind. Scores are directional and not a substitute for a full ALCO review.</span>
+    <span class="pill" id="build">ALM v1.0</span>
+  </div>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+var PROXY = "https://fdic-proxy.jameswspence.workers.dev";
+var BUILD = "ALM v1.0 · " + new Date().toISOString().slice(0,10);
+document.getElementById("build").textContent = BUILD;
+
+var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
+var stateSel = document.getElementById("state");
+STATES.forEach(function(s){
+  var o = document.createElement("option"); o.value = s; o.textContent = s;
+  if (s === "FL") o.selected = true;
+  stateSel.appendChild(o);
+});
+
+var FIELDS = ["assets","loans","secs","deps","ea3y","liab1y","aoci","nim","noninterest","timedeps","uninsured","beta","ldr","onhand","brokered","borrow"];
+var filed = {};   // values pulled from FDIC
+var certNum = null;
+var bankMeta = null;
+var history = [];  // up to 5 quarters, oldest first
+
+function $(id){ return document.getElementById(id); }
+function num(id){ var v = parseFloat($(id).value); return isFinite(v) ? v : null; }
+function setStatus(msg, isErr){ var s=$("status"); s.textContent=msg||""; s.className = "status" + (isErr?" err":""); }
+
+/* Mark overridden fields */
+FIELDS.forEach(function(f){
+  $(f).addEventListener("input", function(){
+    var wrap = $(f).parentElement;
+    var v = parseFloat($(f).value);
+    var isOverride = filed[f] != null && isFinite(v) && Math.abs(v - filed[f]) > 0.0001;
+    wrap.classList.toggle("edited", isOverride);
+  });
+});
+
+function fill(vals){
+  filed = {};
+  FIELDS.forEach(function(f){
+    if (vals[f] != null && isFinite(vals[f])) {
+      var rounded = Math.abs(vals[f]) >= 1000 ? Math.round(vals[f]) : Math.round(vals[f]*100)/100;
+      filed[f] = rounded;
+      $(f).value = rounded;
+    }
+    $(f).parentElement.classList.remove("edited");
+  });
+  autoSizeBand(vals.assets);
+}
+
+function autoSizeBand(assets){
+  if (!assets) return;
+  var m = assets/1000; // $000 -> $MM
+  var band = m<250?"u250":m<500?"250_500":m<1000?"500_1b":m<3000?"1b_3b":m<10000?"3b_10b":"o10b";
+  $("sizeband").value = band;
+}
+
+/* ---------- FDIC fetch ---------- */
+
+function pct(n,d){ return (d && isFinite(n)) ? (n/d)*100 : null; }
+
+function mapFinancial(f){
+  // f = FDIC financials record (values in $000)
+  var assets = f.ASSET, deps = f.DEP, loans = f.LNLSNET != null ? f.LNLSNET : f.LNLSGR, secs = f.SC;
+  return {
+    assets: assets,
+    loans: loans,
+    secs: secs,
+    deps: deps,
+    nim: f.NIMY,
+    ldr: pct(loans, deps),
+    noninterest: pct(f.DEPNI, deps),
+    timedeps: pct((f.DEPTIME != null ? f.DEPTIME : ((f.TS||0)+(f.TSLT100||0))), deps),
+    brokered: pct(f.BRO, deps),
+    borrow: pct((f.FREPO||0) + (f.OTHBFHLB||0) + (f.OTHBORR||0), assets),
+    onhand: pct((f.CHBAL||0) + (f.SCAF||0), assets),
+    aoci: pct(f.EQNM, f.RBCT1J),
+    // These aren't published as single fields — leave blank for manual entry
+    ea3y: null, liab1y: null, uninsured: null, beta: null
+  };
+}
+
+function req(url){
+  return fetch(url, {headers:{"Accept":"application/json"}}).then(function(r){
+    if (!r.ok) throw new Error("FDIC request failed (" + r.status + ")");
+    return r.json();
+  });
+}
+
+function loadByCert(cert){
+  setStatus("Loading call report…");
+  var inst = PROXY + "/api/institutions?filters=CERT:" + encodeURIComponent(cert) +
+             "&fields=NAME,CITY,STALP,CERT,ASSET,REPDTE&limit=1";
+  return req(inst).then(function(j){
+    var rows = (j && j.data) || [];
+    if (!rows.length) throw new Error("No institution found for certificate " + cert + ".");
+    var d = rows[0].data || rows[0];
+    bankMeta = d; certNum = cert;
+    var fin = PROXY + "/api/financials?filters=CERT:" + encodeURIComponent(cert) +
+      "&fields=REPDTE,ASSET,DEP,DEPNI,DEPTIME,TS,TSLT100,LNLSNET,LNLSGR,SC,SCAF,CHBAL,BRO,FREPO,OTHBFHLB,OTHBORR,NIMY,EQNM,RBCT1J" +
+      "&sort_by=REPDTE&sort_order=DESC&limit=5";
+    return req(fin).then(function(fj){
+      var frows = (fj && fj.data) || [];
+      if (!frows.length) throw new Error("No financial data returned for this certificate.");
+      var f = frows[0].data || frows[0];
+      history = frows.map(function(r){ return r.data || r; }).reverse();
+      fill(mapFinancial(f));
+      if (d.STALP) $("state").value = d.STALP;
+      var bl = $("bankline");
+      bl.style.display = "block";
+      bl.innerHTML = "<strong>" + (d.NAME || "Bank") + "</strong> &nbsp;<span>Cert " + cert +
+        (d.CITY ? " · " + d.CITY : "") + (d.STALP ? ", " + d.STALP : "") +
+        (f.REPDTE ? " · Report date " + String(f.REPDTE) : "") + "</span>";
+      setStatus("Loaded. Fields FDIC doesn't publish directly — repricing buckets, uninsured deposits, deposit beta — are blank; fill those in.");
+    });
+  }).catch(function(e){
+    setStatus(e.message || "Couldn't reach the FDIC service. Enter values manually or use sample data.", true);
+  });
+}
+
+function loadByName(name){
+  setStatus("Searching…");
+  var url = PROXY + "/api/institutions?search=NAME:" + encodeURIComponent(name) +
+            "&filters=ACTIVE:1&fields=NAME,CITY,STALP,CERT&limit=1";
+  return req(url).then(function(j){
+    var rows = (j && j.data) || [];
+    if (!rows.length) throw new Error("No active bank matched that name.");
+    var d = rows[0].data || rows[0];
+    $("cert").value = d.CERT;
+    return loadByCert(d.CERT);
+  }).catch(function(e){
+    setStatus(e.message || "Search failed.", true);
+  });
+}
+
+$("load").addEventListener("click", function(){
+  var c = $("cert").value.trim(), n = $("bankname").value.trim();
+  if (c) loadByCert(c);
+  else if (n) loadByName(n);
+  else setStatus("Enter a certificate number or a bank name.", true);
+});
+$("cert").addEventListener("keydown", function(e){ if(e.key==="Enter") $("load").click(); });
+$("bankname").addEventListener("keydown", function(e){ if(e.key==="Enter") $("load").click(); });
+
+$("demo").addEventListener("click", function(){
+  fill({assets:742000,loans:521000,secs:132000,deps:648000,ea3y:31.4,liab1y:44.8,aoci:-11.2,nim:3.18,
+        noninterest:22.6,timedeps:29.4,uninsured:34.1,beta:41.5,ldr:80.4,onhand:12.8,brokered:8.3,borrow:5.1});
+  // Illustrative five-quarter history: margin compressing, funding drifting hotter.
+  history = [
+    {REPDTE:20250331, NIMY:3.44, LNLSNET:486000, DEP:661000, DEPNI:178000, BRO:29000},
+    {REPDTE:20250630, NIMY:3.36, LNLSNET:497000, DEP:657000, DEPNI:170000, BRO:34000},
+    {REPDTE:20250930, NIMY:3.29, LNLSNET:506000, DEP:654000, DEPNI:159000, BRO:41000},
+    {REPDTE:20251231, NIMY:3.23, LNLSNET:514000, DEP:651000, DEPNI:151000, BRO:48000},
+    {REPDTE:20260331, NIMY:3.18, LNLSNET:521000, DEP:648000, DEPNI:146500, BRO:54000}
+  ];
+  var bl=$("bankline"); bl.style.display="block";
+  bl.innerHTML = "<strong>Sample Community Bank</strong> &nbsp;<span>Illustrative figures — not a real institution</span>";
+  setStatus("Sample data loaded. Edit anything, then score it.");
+});
+
+/* ---------- Peer benchmarks ---------- */
+/* Directional medians by asset band; state file applies a regional tilt. */
+var SIZE_PEERS = {
+  u250:    {ea3y:29.0, liab1y:40.0, aoci:-8.0, nim:3.55, noninterest:24.0, timedeps:31.0, uninsured:26.0, beta:33.0, ldr:71.0, onhand:16.0, brokered:3.0, borrow:3.0},
+  "250_500":{ea3y:31.0,liab1y:42.0, aoci:-9.5, nim:3.42, noninterest:23.0, timedeps:30.0, uninsured:29.0, beta:36.0, ldr:76.0, onhand:14.5, brokered:4.5, borrow:4.0},
+  "500_1b": {ea3y:32.5,liab1y:44.0, aoci:-11.0,nim:3.35, noninterest:22.0, timedeps:29.0, uninsured:32.0, beta:39.0, ldr:80.0, onhand:13.0, brokered:6.0, borrow:5.0},
+  "1b_3b":  {ea3y:33.5,liab1y:46.0, aoci:-12.5,nim:3.28, noninterest:21.0, timedeps:28.0, uninsured:36.0, beta:43.0, ldr:83.0, onhand:12.0, brokered:8.0, borrow:6.5},
+  "3b_10b": {ea3y:34.0,liab1y:48.0, aoci:-14.0,nim:3.20, noninterest:20.0, timedeps:27.0, uninsured:40.0, beta:47.0, ldr:85.0, onhand:11.5, brokered:10.0,borrow:8.0},
+  o10b:     {ea3y:33.0,liab1y:50.0, aoci:-15.0,nim:3.10, noninterest:21.0, timedeps:25.0, uninsured:45.0, beta:51.0, ldr:82.0, onhand:12.5, brokered:11.0,borrow:9.5}
+};
+/* Regional tilts: high-growth/high-cost deposit markets carry hotter funding. */
+var HOT = ["FL","TX","AZ","NV","CA","CO","UT","WA","GA","NC","SC","TN","ID"];
+var CORE = ["IA","NE","KS","ND","SD","MN","WI","MO","OK","AR","MS","AL","KY","WV","VT","ME","MT","WY"];
+
+function statePeers(band, st){
+  var base = SIZE_PEERS[band], out = {};
+  var hot = HOT.indexOf(st) >= 0, core = CORE.indexOf(st) >= 0;
+  var tilt = hot ? 1 : core ? -1 : 0;
+  for (var k in base){
+    var v = base[k];
+    if (tilt === 0) { out[k] = v; continue; }
+    if (k==="ldr")            v += tilt*4.0;
+    else if (k==="uninsured") v += tilt*4.5;
+    else if (k==="beta")      v += tilt*4.0;
+    else if (k==="brokered")  v += tilt*2.0;
+    else if (k==="noninterest") v -= tilt*1.5;
+    else if (k==="onhand")    v -= tilt*1.5;
+    else if (k==="nim")       v += tilt*0.06;
+    out[k] = Math.round(v*100)/100;
+  }
+  return out;
+}
+
+/* ---------- Scoring ---------- */
+/* score(v, best, worst): linear 0–100, clamped. */
+function sc(v, best, worst){
+  if (v == null || !isFinite(v)) return null;
+  var t = (v - worst) / (best - worst);
+  return Math.max(0, Math.min(1, t)) * 100;
+}
+function avg(arr){
+  var f = arr.filter(function(x){ return x != null; });
+  if (!f.length) return null;
+  return f.reduce(function(a,b){return a+b;},0) / f.length;
+}
+function color(s){ return s == null ? "var(--mute)" : s>=70 ? "var(--good)" : s>=45 ? "var(--warn)" : "var(--risk)"; }
+function fmt(v, dp){ return v == null || !isFinite(v) ? "—" : v.toFixed(dp==null?1:dp); }
+
+var PILLARS = [
+  {key:"rate", name:"Rate sensitivity", weight:0.35,
+   metrics:[
+     {id:"ea3y",   label:"Assets repricing > 3 yrs", best:22, worst:48, unit:"%"},
+     {id:"liab1y", label:"Liabilities repricing < 1 yr", best:32, worst:62, unit:"%"},
+     {id:"aoci",   label:"AOCI / tier 1 capital", best:-2, worst:-28, unit:"%"},
+     {id:"nim",    label:"Net interest margin", best:4.10, worst:2.60, unit:"%"}
+   ]},
+  {key:"funding", name:"Funding mix & beta", weight:0.35,
+   metrics:[
+     {id:"noninterest", label:"Noninterest-bearing deposits", best:34, worst:12, unit:"%"},
+     {id:"timedeps",    label:"Time deposits", best:18, worst:44, unit:"%"},
+     {id:"uninsured",   label:"Uninsured deposits", best:18, worst:52, unit:"%"},
+     {id:"beta",        label:"Cumulative deposit beta", best:24, worst:62, unit:"%"}
+   ]},
+  {key:"liquidity", name:"Liquidity & concentration", weight:0.30,
+   metrics:[
+     {id:"ldr",      label:"Loan-to-deposit ratio", best:66, worst:98, unit:"%"},
+     {id:"onhand",   label:"Cash & unpledged securities", best:22, worst:6, unit:"%"},
+     {id:"brokered", label:"Brokered & listing-service", best:1, worst:18, unit:"%"},
+     {id:"borrow",   label:"Borrowings / assets", best:1, worst:15, unit:"%"}
+   ]}
+];
+
+function peerMark(v, m, peer){
+  // Direction-aware: is the bank better or worse than peer on this metric?
+  if (v == null || peer == null) return null;
+  var better = m.best > m.worst ? (v > peer) : (v < peer);
+  var gap = Math.abs(v - peer);
+  var scale = Math.abs(m.best - m.worst);
+  if (gap / scale < 0.06) return "flat";
+  return better ? "up" : "down";
+}
+
+/* Bullet bar: shaded weak→strong band, peer ticks, bank marker. */
+function bullet(m, val, sizeV, stateV){
+  var W = 100, H = 26, PAD = 1.5;
+  // Domain spans the scoring band plus 15% headroom on each side.
+  var lo = Math.min(m.best, m.worst), hi = Math.max(m.best, m.worst);
+  var pad = (hi - lo) * 0.15;
+  var d0 = lo - pad, d1 = hi + pad;
+  [val, sizeV, stateV].forEach(function(x){
+    if (x == null || !isFinite(x)) return;
+    if (x < d0) d0 = x - pad*0.5;
+    if (x > d1) d1 = x + pad*0.5;
+  });
+  function x(u){ return PAD + ((u - d0) / (d1 - d0)) * (W - PAD*2); }
+
+  // Gradient runs worst → best in domain order, so flip when best < worst.
+  var gid = "g_" + m.id;
+  var lowIsBest = m.best < m.worst;
+  var stops = lowIsBest
+    ? '<stop offset="0" stop-color="#E4F3EC"/><stop offset="0.5" stop-color="#FDF3E0"/><stop offset="1" stop-color="#FBEAEA"/>'
+    : '<stop offset="0" stop-color="#FBEAEA"/><stop offset="0.5" stop-color="#FDF3E0"/><stop offset="1" stop-color="#E4F3EC"/>';
+
+  var bandX0 = x(Math.min(m.best,m.worst)), bandX1 = x(Math.max(m.best,m.worst));
+  var s = sc(val, m.best, m.worst);
+  var mark = peerMark(val, m, sizeV);
+  var arrow = mark === "up" ? "▲" : mark === "down" ? "▼" : mark === "flat" ? "▬" : "";
+
+  var svg =
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" width="100%" height="' + H + '" role="img" ' +
+      'aria-label="' + m.label + ': ' + (val==null?"no value":fmt(val,1)+m.unit) + '">' +
+    '<defs><linearGradient id="' + gid + '" x1="0" x2="1">' + stops + '</linearGradient></defs>' +
+    '<rect x="' + bandX0.toFixed(2) + '" y="7" width="' + (bandX1-bandX0).toFixed(2) + '" height="12" ' +
+      'fill="url(#' + gid + ')" rx="1.5"/>' +
+    // state peer tick (gold)
+    (stateV==null?"":'<rect x="' + (x(stateV)-0.4).toFixed(2) + '" y="4" width="0.8" height="18" fill="var(--gold)"/>') +
+    // size peer tick (blue)
+    (sizeV==null?"":'<rect x="' + (x(sizeV)-0.4).toFixed(2) + '" y="4" width="0.8" height="18" fill="var(--blue)"/>') +
+    // bank marker (navy)
+    (val==null?"":'<rect x="' + (x(val)-0.9).toFixed(2) + '" y="1" width="1.8" height="24" fill="var(--navy)" rx="0.6"/>') +
+    '</svg>';
+
+  return '<div class="brow"><div>' +
+    '<div class="blabel"><b>' + m.label + '</b>' +
+      '<span class="' + (mark||"flat") + '">' + arrow + ' vs ' + fmt(sizeV,1) + m.unit + ' size · ' +
+      fmt(stateV,1) + m.unit + ' ' + $("state").value + '</span></div>' +
+    svg + '</div>' +
+    '<div class="bnum" style="color:' + color(s) + '">' + (val==null?"—":fmt(val,1)+m.unit) +
+      '<small>' + (s==null?"":Math.round(s)+"/100") + '</small></div>' +
+    '</div>';
+}
+
+/* Five-quarter trends from FDIC history. */
+var TRENDS = [
+  {id:"nim",   label:"Net interest margin", unit:"%", dp:2, higherBetter:true,
+   get:function(f){ return f.NIMY; }},
+  {id:"ldr",   label:"Loan-to-deposit", unit:"%", dp:1, higherBetter:false,
+   get:function(f){ var l = f.LNLSNET!=null?f.LNLSNET:f.LNLSGR; return pct(l, f.DEP); }},
+  {id:"nib",   label:"Noninterest-bearing deposits", unit:"%", dp:1, higherBetter:true,
+   get:function(f){ return pct(f.DEPNI, f.DEP); }},
+  {id:"bro",   label:"Brokered deposits", unit:"%", dp:1, higherBetter:false,
+   get:function(f){ return pct(f.BRO, f.DEP); }}
+];
+
+function qLabel(repdte){
+  var s = String(repdte);
+  if (s.length !== 8) return s;
+  var y = s.slice(2,4), mm = s.slice(4,6);
+  var q = mm==="03"?"Q1":mm==="06"?"Q2":mm==="09"?"Q3":"Q4";
+  return q + "'" + y;
+}
+
+function spark(series, higherBetter){
+  var W = 240, H = 62, L = 4, R = 4, T = 8, B = 16;
+  var vals = series.map(function(p){ return p.v; });
+  var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+  if (hi === lo){ hi = lo + 1; lo = lo - 1; }
+  var padY = (hi - lo) * 0.2; lo -= padY; hi += padY;
+  var n = series.length;
+  function x(i){ return L + (i / (n-1)) * (W - L - R); }
+  function y(v){ return T + (1 - (v - lo) / (hi - lo)) * (H - T - B); }
+
+  var pts = series.map(function(p,i){ return x(i).toFixed(1) + "," + y(p.v).toFixed(1); });
+  var line = "M" + pts.join(" L");
+  var area = line + " L" + x(n-1).toFixed(1) + "," + (H-B) + " L" + x(0).toFixed(1) + "," + (H-B) + " Z";
+
+  var first = series[0].v, last = series[n-1].v;
+  var improving = higherBetter ? last >= first : last <= first;
+  var stroke = improving ? "var(--good)" : "var(--risk)";
+  var fill = improving ? "rgba(27,127,90,.10)" : "rgba(178,59,59,.10)";
+
+  var dots = series.map(function(p,i){
+    var isLast = i === n-1;
+    return '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(p.v).toFixed(1) + '" r="' + (isLast?3:2) + '" ' +
+           'fill="' + (isLast?stroke:"#fff") + '" stroke="' + stroke + '" stroke-width="1.4"/>';
+  }).join("");
+
+  var labels = series.map(function(p,i){
+    return '<text x="' + x(i).toFixed(1) + '" y="' + (H-4) + '" text-anchor="middle" ' +
+           'font-size="8" fill="var(--mute)">' + p.q + '</text>';
+  }).join("");
+
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="' + H + '" role="img">' +
+    '<path d="' + area + '" fill="' + fill + '"/>' +
+    '<path d="' + line + '" fill="none" stroke="' + stroke + '" stroke-width="1.8" ' +
+      'stroke-linejoin="round" stroke-linecap="round"/>' +
+    dots + labels + '</svg>';
+}
+
+function renderTrends(){
+  var panel = $("trendpanel");
+  if (history.length < 2){
+    panel.classList.add("hidden");
+    return;
+  }
+  panel.classList.remove("hidden");
+
+  $("trends").innerHTML = '<div class="tgrid">' + TRENDS.map(function(t){
+    var series = history.map(function(f){
+      return {q: qLabel(f.REPDTE), v: t.get(f)};
+    }).filter(function(p){ return p.v != null && isFinite(p.v); });
+
+    if (series.length < 2){
+      return '<div class="tcard"><div class="ttop"><h4>' + t.label + '</h4></div>' +
+             '<div class="nodata">Not enough quarters reported.</div></div>';
+    }
+
+    var first = series[0].v, last = series[series.length-1].v, ch = last - first;
+    var improving = t.higherBetter ? ch >= 0 : ch <= 0;
+    var sign = ch > 0 ? "+" : "";
+    return '<div class="tcard">' +
+      '<div class="ttop"><h4>' + t.label + '</h4>' +
+      '<span class="tnow">' + fmt(last, t.dp) + t.unit + '</span></div>' +
+      '<div class="tdelta ' + (improving?"up":"down") + '">' + sign + fmt(ch, t.dp) + t.unit +
+        ' over ' + series.length + ' quarters</div>' +
+      spark(series, t.higherBetter) + '</div>';
+  }).join("") + '</div>';
+
+  $("trendnote").textContent = "Green means the metric moved in the favorable direction over the window, " +
+    "regardless of level. Trends use filed call report data only — manual overrides don't affect this panel.";
+}
+
+$("run").addEventListener("click", function(){
+  var v = {};
+  FIELDS.forEach(function(f){ v[f] = num(f); });
+
+  var band = $("sizeband").value, st = $("state").value;
+  var sizeP = SIZE_PEERS[band], stateP = statePeers(band, st);
+
+  var bandLabel = $("sizeband").options[$("sizeband").selectedIndex].text;
+
+  // Pillar scores
+  var pilHtml = "", weighted = 0, wsum = 0, pscores = {};
+  PILLARS.forEach(function(p){
+    var scores = p.metrics.map(function(m){ return sc(v[m.id], m.best, m.worst); });
+    var ps = avg(scores);
+    pscores[p.key] = ps;
+    if (ps != null){ weighted += ps * p.weight; wsum += p.weight; }
+
+    var rows = p.metrics.map(function(m, i){
+      var val = v[m.id], s = scores[i];
+      var mark = peerMark(val, m, sizeP[m.id]);
+      var arrow = mark === "up" ? "▲" : mark === "down" ? "▼" : mark === "flat" ? "▬" : "";
+      return '<div class="m">' +
+        '<span class="lbl"><span class="dot" style="background:' + color(s) + '"></span>' + m.label + '</span>' +
+        '<span class="num">' + (val==null?"—":fmt(val,1)+m.unit) + '</span>' +
+        '<span class="peers ' + (mark||"flat") + '">' + arrow + ' ' + fmt(sizeP[m.id],1) + m.unit + '</span>' +
+        '</div>';
+    }).join("");
+
+    pilHtml += '<div class="pillar">' +
+      '<div class="ptop"><h4>' + p.name + '</h4>' +
+      '<span class="pscore" style="color:' + color(ps) + '">' + (ps==null?"—":Math.round(ps)) + '</span></div>' +
+      '<div class="pweight">' + Math.round(p.weight*100) + '% of composite</div>' +
+      '<div class="bar"><i style="width:' + (ps==null?0:ps) + '%;background:' + color(ps) + '"></i></div>' +
+      rows + '</div>';
+  });
+  $("pillars").innerHTML = pilHtml;
+
+  var total = wsum ? Math.round(weighted / wsum) : null;
+  $("total").textContent = total == null ? "—" : total;
+  var circ = 2 * Math.PI * 56;
+  var arc = $("arc");
+  arc.setAttribute("stroke-dasharray", circ.toFixed(1));
+  arc.setAttribute("stroke-dashoffset", (circ * (1 - (total||0)/100)).toFixed(1));
+  arc.setAttribute("stroke", color(total));
+
+  var tag = $("tag"), head = $("headline"), sum = $("summary");
+  if (total == null){
+    tag.className="tag t-warn"; tag.textContent="Incomplete";
+    head.textContent="Not enough inputs to score";
+    sum.textContent="Fill in the blank fields — repricing buckets, uninsured deposits, and deposit beta usually need manual entry.";
+  } else if (total >= 70){
+    tag.className="tag t-good"; tag.textContent="Well positioned";
+    head.textContent="Balance sheet is defensively built";
+    sum.textContent="Funding and duration are inside comfortable bands for this peer group. Watch for drift as deposits reprice.";
+  } else if (total >= 45){
+    tag.className="tag t-warn"; tag.textContent="Watch list";
+    head.textContent="Manageable, with pressure points";
+    sum.textContent="One or two pillars are carrying more risk than peers. The metric detail below shows where the gap is.";
+  } else {
+    tag.className="tag t-risk"; tag.textContent="Elevated risk";
+    head.textContent="Structural ALM exposure";
+    sum.textContent="Duration, funding cost, or liquidity coverage is meaningfully off peer. This warrants an ALCO agenda item.";
+  }
+
+  // Bullet bars, grouped by pillar
+  $("lg-size").textContent = bandLabel + " peers";
+  $("lg-state").textContent = st + " peers";
+
+  $("bullets").innerHTML = PILLARS.map(function(p){
+    var rows = p.metrics.map(function(m){
+      return bullet(m, v[m.id], sizeP[m.id], stateP[m.id]);
+    }).join("");
+    return '<div class="bgroup"><h5>' + p.name + '</h5>' + rows + '</div>';
+  }).join("");
+
+  renderTrends();
+
+  // Actions — weakest metrics first
+  var flagged = [];
+  PILLARS.forEach(function(p){
+    p.metrics.forEach(function(m){
+      var s = sc(v[m.id], m.best, m.worst);
+      if (s != null && s < 55) flagged.push({p:p.name, m:m, s:s, v:v[m.id], peer:sizeP[m.id]});
+    });
+  });
+  flagged.sort(function(a,b){ return a.s - b.s; });
+
+  var ADVICE = {
+    ea3y:"Shorten new production or add received-fixed swaps to pull duration in.",
+    liab1y:"Term out a slice of funding so less of the liability book reprices inside a year.",
+    aoci:"Model the capital effect of selling or restructuring the underwater portion of AFS.",
+    nim:"Reprice loan production and audit the deposit book for accounts paying above the offered rate.",
+    noninterest:"Push treasury management and operating accounts — that's the cheapest deposit growth available.",
+    timedeps:"Build a CD maturity ladder and a retention offer before the next repricing wave.",
+    uninsured:"Move large balances into reciprocal or sweep programs to cut the uninsured share.",
+    beta:"Segment depositors by rate sensitivity instead of repricing the whole book together.",
+    ldr:"Slow loan growth or fund it with core deposits rather than wholesale.",
+    onhand:"Rebuild the unpledged securities buffer and confirm contingent lines are tested.",
+    brokered:"Replace maturing brokered funds with core deposits — examiners read this as concentration.",
+    borrow:"Reduce reliance on FHLB advances; confirm collateral capacity under stress."
+  };
+
+  if (!flagged.length){
+    $("actionlist").innerHTML = "<li>No metric scored below the watch threshold. Re-run this after each call report to catch drift early.</li>";
+  } else {
+    $("actionlist").innerHTML = flagged.slice(0,5).map(function(f){
+      return "<li><b>" + f.m.label + "</b> at " + fmt(f.v,1) + f.m.unit +
+             " vs " + fmt(f.peer,1) + f.m.unit + " for size peers. " + (ADVICE[f.m.id]||"") + "</li>";
+    }).join("");
+  }
+
+  $("results").classList.remove("hidden");
+  $("results").scrollIntoView({behavior:"smooth", block:"start"});
+  post("SCROLL_TOP");
+  track("alm_score", {score: total, cert: certNum, band: band, state: st});
+});
+
+/* ---------- Host integration ---------- */
+function post(type, payload){
+  try { parent.postMessage(Object.assign({type:type, widget:"alm-scorecard"}, payload||{}), "*"); } catch(e){}
+}
+function track(action, data){
+  post("TRACK", {action:action, data:data});
+  try { if (window.parent.dataLayer) window.parent.dataLayer.push(Object.assign({event:"alm_widget", action:action}, data)); } catch(e){}
+}
+function resize(){ post("RESIZE", {height: document.documentElement.scrollHeight}); }
+window.addEventListener("load", resize);
+window.addEventListener("resize", resize);
+if (window.ResizeObserver) new ResizeObserver(resize).observe(document.body);
+
+})();
+</script>
+</body>
+</html>
