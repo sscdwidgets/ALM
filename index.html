@@ -210,10 +210,19 @@ button.gold:hover{background:#F2AE22}
 .btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .mfine{margin:14px 0 0;font-size:11.5px;color:var(--mute)}
 
+/* Completed panels get a check in the header so a closed panel reads as done. */
+.collapse.complete{border-left:3px solid var(--good)}
+.collapse.complete .ctitle{color:var(--good)}
+.collapse.complete .ctitle:before{content:"✓";display:inline-flex;align-items:center;
+  justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--good);
+  color:#fff;font-size:9.5px;margin-right:7px;vertical-align:-3px}
+.lookuppanel .csum{font-weight:500;color:var(--navy)}
+
 /* Refine panel reads as the primary action; filed values are secondary. */
 .refinepanel{border-left:3px solid var(--blue)}
 .refinepanel .ctitle{color:var(--navy)}
 .refinepanel.complete{border-left-color:var(--good)}
+.refinepanel.complete .ctitle{color:var(--good)}
 #filedpanel .ctitle{color:var(--mute)}
 .rerun{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:18px}
 .rnote{font-size:12.5px;color:var(--mute)}
@@ -530,7 +539,7 @@ button.gold:hover{background:#F2AE22}
 
   <div class="foot">
     <span>Call report data via FDIC BankFind. Scores are directional and not a substitute for a full ALCO review.</span>
-    <span class="pill" id="build">ALM v2.5</span>
+    <span class="pill" id="build">ALM v3.0</span>
   </div>
 
 </div>
@@ -572,7 +581,7 @@ var FDIC = "https://banks.data.fdic.gov/api";
 function viaProxy(fdicUrl){
   return PROXY + "/?url=" + encodeURIComponent(fdicUrl);
 }
-var BUILD = "ALM v2.5 · " + new Date().toISOString().slice(0,10);
+var BUILD = "ALM v3.0 · " + new Date().toISOString().slice(0,10);
 document.getElementById("build").textContent = BUILD;
 
 var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
@@ -588,6 +597,7 @@ var filed = {};   // values pulled from FDIC
 var certNum = null;
 var bankMeta = null;
 var history = [];  // up to 5 quarters, oldest first
+var lastRepdte = null;
 
 function $(id){ return document.getElementById(id); }
 function num(id){ var v = parseFloat($(id).value); return isFinite(v) ? v : null; }
@@ -691,7 +701,6 @@ function loadByCert(cert){
       bl.innerHTML = "<strong>" + (d.NAME || "Bank") + "</strong> &nbsp;<span>Cert " + cert +
         (d.CITY ? " · " + d.CITY : "") + (d.STALP ? ", " + d.STALP : "") +
         (f.REPDTE ? " · Report date " + String(f.REPDTE) : "") + "</span>";
-      setStatus("Loaded. Five fields aren't in the FDIC dataset — repricing buckets, AOCI, uninsured deposits, and deposit beta. Enter those from the call report or your ALCO package to complete the score.");
       // Basic level: both panels stay closed, score runs on filed data alone.
       $("inputtoggle").disabled = false;
       $("filedtoggle").disabled = false;
@@ -704,7 +713,19 @@ function loadByCert(cert){
       $("lookuppanel").classList.add("complete");
       setLookup(false);
       setStep(1);
-      $("run").click();
+      // Peer medians are computed from the same quarter's filings.
+      lastRepdte = f.REPDTE;
+      setStatus("Loaded " + (d.NAME || "bank") + ". Computing peer benchmarks…");
+      var pband = $("sizeband").value, pst = $("state").value;
+      loadPeerGroups(pband, pst, f.REPDTE).then(function(){
+        var msgs = [];
+        if (sizePeer && sizePeer.n) msgs.push(sizePeer.n + " size peers");
+        if (statePeer && statePeer.n) msgs.push(statePeer.n + " in " + pst);
+        setStatus(msgs.length
+          ? "Benchmarked against " + msgs.join(" and ") + ". Five fields aren't in the FDIC dataset — add them to complete the score."
+          : "Peer data unavailable for this group. Five fields aren't in the FDIC dataset — add them to complete the score.");
+        $("run").click();
+      });
     });
   }).catch(function(e){
     $("lookuppanel").classList.remove("complete");
@@ -857,38 +878,128 @@ $("load").addEventListener("click", function(){
 });
 $("cert").addEventListener("keydown", function(e){ if(e.key==="Enter") $("load").click(); });
 
-/* ---------- Peer benchmarks ---------- */
-/* Directional medians by asset band; state file applies a regional tilt. */
-var SIZE_PEERS = {
-  u250:    {ea3y:29.0, liab1y:40.0, aoci:-8.0, nim:3.55, noninterest:24.0, timedeps:31.0, uninsured:26.0, beta:33.0, ldr:71.0, onhand:16.0, brokered:3.0, borrow:3.0},
-  "250_500":{ea3y:31.0,liab1y:42.0, aoci:-9.5, nim:3.42, noninterest:23.0, timedeps:30.0, uninsured:29.0, beta:36.0, ldr:76.0, onhand:14.5, brokered:4.5, borrow:4.0},
-  "500_1b": {ea3y:32.5,liab1y:44.0, aoci:-11.0,nim:3.35, noninterest:22.0, timedeps:29.0, uninsured:32.0, beta:39.0, ldr:80.0, onhand:13.0, brokered:6.0, borrow:5.0},
-  "1b_3b":  {ea3y:33.5,liab1y:46.0, aoci:-12.5,nim:3.28, noninterest:21.0, timedeps:28.0, uninsured:36.0, beta:43.0, ldr:83.0, onhand:12.0, brokered:8.0, borrow:6.5},
-  "3b_10b": {ea3y:34.0,liab1y:48.0, aoci:-14.0,nim:3.20, noninterest:20.0, timedeps:27.0, uninsured:40.0, beta:47.0, ldr:85.0, onhand:11.5, brokered:10.0,borrow:8.0},
-  o10b:     {ea3y:33.0,liab1y:50.0, aoci:-15.0,nim:3.10, noninterest:21.0, timedeps:25.0, uninsured:45.0, beta:51.0, ldr:82.0, onhand:12.5, brokered:11.0,borrow:9.5}
-};
-/* Regional tilts: high-growth/high-cost deposit markets carry hotter funding. */
-var HOT = ["FL","TX","AZ","NV","CA","CO","UT","WA","GA","NC","SC","TN","ID"];
-var CORE = ["IA","NE","KS","ND","SD","MN","WI","MO","OK","AR","MS","AL","KY","WV","VT","ME","MT","WY"];
+/* ---------- Peer benchmarks (computed from FDIC) ---------- */
 
-function statePeers(band, st){
-  var base = SIZE_PEERS[band], out = {};
-  var hot = HOT.indexOf(st) >= 0, core = CORE.indexOf(st) >= 0;
-  var tilt = hot ? 1 : core ? -1 : 0;
-  for (var k in base){
-    var v = base[k];
-    if (tilt === 0) { out[k] = v; continue; }
-    if (k==="ldr")            v += tilt*4.0;
-    else if (k==="uninsured") v += tilt*4.5;
-    else if (k==="beta")      v += tilt*4.0;
-    else if (k==="brokered")  v += tilt*2.0;
-    else if (k==="noninterest") v -= tilt*1.5;
-    else if (k==="onhand")    v -= tilt*1.5;
-    else if (k==="nim")       v += tilt*0.06;
-    out[k] = Math.round(v*100)/100;
-  }
-  return out;
+var BANDS = {
+  u250:     [0, 250000],
+  "250_500":[250000, 500000],
+  "500_1b": [500000, 1000000],
+  "1b_3b":  [1000000, 3000000],
+  "3b_10b": [3000000, 10000000],
+  o10b:     [10000000, 100000000000]
+};
+
+// Only these are derivable from filed data. The five manual metrics have no
+// peer source, so their ticks stay blank rather than showing an invented number.
+var PEER_METRICS = ["nim","ldr","noninterest","timedeps","brokered","borrow","onhand"];
+
+var peerCache = {};          // key -> {n, med:{...}} or {error:...}
+var sizePeer = null, statePeer = null;
+
+function median(arr){
+  var a = arr.filter(function(x){ return x != null && isFinite(x); }).sort(function(p,q){ return p-q; });
+  if (!a.length) return null;
+  var m = Math.floor(a.length/2);
+  return a.length % 2 ? a[m] : (a[m-1]+a[m])/2;
 }
+
+/* One page of peer financials. FDIC caps limit at 10000 but practical pages
+   are 500; we request the fields we can derive ratios from. */
+function peerPage(filters, offset){
+  var url = viaProxy(FDIC + "/financials?filters=" + encodeURIComponent(filters) +
+    "&fields=CERT,REPDTE,ASSET,DEP,DEPNI,DEPTIME,TS,TSLT100,LNLSNET,LNLSGR,SC,SCAF,CHBAL,BRO,FREPO,OTHBFHLB,OTHBORR,NIMY" +
+    "&sort_by=ASSET&sort_order=DESC&limit=500&offset=" + offset);
+  return req(url);
+}
+
+/* Build the ratio set for one peer bank from its raw record. */
+function peerRatios(f){
+  var assets = f.ASSET, deps = f.DEP;
+  var loans = f.LNLSNET != null ? f.LNLSNET : f.LNLSGR;
+  if (!assets || !deps) return null;
+  return {
+    nim: f.NIMY,
+    ldr: pct(loans, deps),
+    noninterest: pct(f.DEPNI, deps),
+    timedeps: pct((f.DEPTIME != null ? f.DEPTIME : ((f.TS||0)+(f.TSLT100||0))), deps),
+    brokered: pct(f.BRO, deps),
+    borrow: pct((f.FREPO||0) + (f.OTHBFHLB||0) + (f.OTHBORR||0), assets),
+    onhand: pct((f.CHBAL||0) + (f.SCAF||0), assets)
+  };
+}
+
+/* Fetch a peer group and reduce it to medians. Paginates up to 3 pages
+   (1500 banks) — enough to cover every band except the smallest nationally. */
+function fetchPeers(filters, key){
+  if (peerCache[key]) return Promise.resolve(peerCache[key]);
+
+  var rows = [];
+  function page(off, depth){
+    return peerPage(filters, off).then(function(j){
+      var d = (j && j.data) || [];
+      d.forEach(function(r){ rows.push(r.data || r); });
+      var total = (j && j.meta && j.meta.total) || 0;
+      if (d.length === 500 && depth < 2 && rows.length < total){
+        return page(off + 500, depth + 1);
+      }
+      return null;
+    });
+  }
+
+  return page(0, 0).then(function(){
+    // One record per bank — the filter is already pinned to a single quarter,
+    // but guard against duplicates from restated filings.
+    var seen = {}, ratios = [];
+    rows.forEach(function(f){
+      if (seen[f.CERT]) return;
+      seen[f.CERT] = 1;
+      var r = peerRatios(f);
+      if (r) ratios.push(r);
+    });
+    var med = {};
+    PEER_METRICS.forEach(function(m){
+      med[m] = median(ratios.map(function(r){ return r[m]; }));
+    });
+    var out = {n: ratios.length, med: med};
+    peerCache[key] = out;
+    return out;
+  }).catch(function(e){
+    var out = {n: 0, med: {}, error: e.message || "Peer data unavailable"};
+    peerCache[key] = out;
+    return out;
+  });
+}
+
+/* Both peer groups for the loaded bank, pinned to its report date. */
+function loadPeerGroups(band, st, repdte){
+  var b = BANDS[band] || BANDS["500_1b"];
+  var q = "REPDTE:" + repdte;
+  var sizeFilter  = q + " AND ASSET:[" + b[0] + " TO " + b[1] + "]";
+  var stateFilter = sizeFilter + " AND STALP:" + st;
+  return Promise.all([
+    fetchPeers(sizeFilter,  "size|" + band + "|" + repdte),
+    fetchPeers(stateFilter, "state|" + band + "|" + st + "|" + repdte)
+  ]).then(function(r){
+    sizePeer = r[0]; statePeer = r[1];
+    return r;
+  });
+}
+
+/* Changing a peer group needs a fresh median set, not a re-score of stale data. */
+function refreshPeers(){
+  if (!lastRepdte) return;
+  var b = $("sizeband").value, s2 = $("state").value;
+  setStatus("Recomputing peer benchmarks…");
+  loadPeerGroups(b, s2, lastRepdte).then(function(){
+    var msgs = [];
+    if (sizePeer && sizePeer.n) msgs.push(sizePeer.n + " size peers");
+    if (statePeer && statePeer.n) msgs.push(statePeer.n + " in " + s2);
+    setStatus(msgs.length ? "Benchmarked against " + msgs.join(" and ") + "." : "Peer data unavailable for this group.");
+    $("run").click();
+  });
+}
+$("sizeband").addEventListener("change", refreshPeers);
+$("state").addEventListener("change", refreshPeers);
 
 /* ---------- Scoring ---------- */
 /* score(v, best, worst): linear 0–100, clamped. */
@@ -979,10 +1090,14 @@ function bullet(m, val, sizeV, stateV){
     (val==null?"":'<rect x="' + (x(val)-0.9).toFixed(2) + '" y="1" width="1.8" height="24" fill="var(--navy)" rx="0.6"/>') +
     '</svg>';
 
+  var hasPeer = (sizeV != null && isFinite(sizeV)) || (stateV != null && isFinite(stateV));
+  var peerTxt = hasPeer
+    ? arrow + ' vs ' + fmt(sizeV,1) + m.unit + ' size · ' + fmt(stateV,1) + m.unit + ' ' + $("state").value
+    : 'no peer benchmark';
+
   return '<div class="brow"><div>' +
     '<div class="blabel"><b>' + m.label + '</b>' +
-      '<span class="' + (mark||"flat") + '">' + arrow + ' vs ' + fmt(sizeV,1) + m.unit + ' size · ' +
-      fmt(stateV,1) + m.unit + ' ' + $("state").value + '</span></div>' +
+      '<span class="' + (hasPeer ? (mark||"flat") : "flat") + '">' + peerTxt + '</span></div>' +
     svg + '</div>' +
     '<div class="bnum" style="color:' + color(s) + '">' + (val==null?"—":fmt(val,1)+m.unit) +
       '<small>' + (s==null?"":Math.round(s)+"/100") + '</small></div>' +
@@ -1175,7 +1290,13 @@ function setLookup(open){
 }
 
 $("lookuptoggle").addEventListener("click", function(){
-  setLookup(!$("lookupbody").classList.contains("open"));
+  var opening = !$("lookupbody").classList.contains("open");
+  setLookup(opening);
+  if (opening){
+    // Reopening means they're searching again — drop the done styling.
+    $("lookuppanel").classList.remove("complete");
+    setTimeout(function(){ nameInput.select(); nameInput.focus(); }, 260);
+  }
 });
 
 function inputsOpen(){ return $("inputbody").classList.contains("open"); }
@@ -1300,7 +1421,8 @@ $("run").addEventListener("click", function(){
   FIELDS.forEach(function(f){ v[f] = num(f); });
 
   var band = $("sizeband").value, st = $("state").value;
-  var sizeP = SIZE_PEERS[band], stateP = statePeers(band, st);
+  var sizeP  = (sizePeer  && sizePeer.med)  || {};
+  var stateP = (statePeer && statePeer.med) || {};
 
   var bandLabel = $("sizeband").options[$("sizeband").selectedIndex].text;
 
@@ -1365,8 +1487,13 @@ $("run").addEventListener("click", function(){
   }
 
   // Bullet bars, grouped by pillar
-  $("lg-size").textContent = bandLabel + " peers";
-  $("lg-state").textContent = st + " peers";
+  function peerLabel(p, base){
+    if (!p) return base;
+    if (p.error) return base + " (unavailable)";
+    return base + " (n=" + p.n + ")";
+  }
+  $("lg-size").textContent  = peerLabel(sizePeer, bandLabel);
+  $("lg-state").textContent = peerLabel(statePeer, st);
 
   $("bullets").innerHTML = PILLARS.map(function(p){
     var rows = p.metrics.map(function(m){
@@ -1406,8 +1533,11 @@ $("run").addEventListener("click", function(){
     $("actionlist").innerHTML = "<li>No metric scored below the watch threshold. Re-run this after each call report to catch drift early.</li>";
   } else {
     $("actionlist").innerHTML = flagged.slice(0,5).map(function(f){
+      var cmp = (f.peer != null && isFinite(f.peer))
+        ? " vs " + fmt(f.peer,1) + f.m.unit + " for size peers."
+        : " (no peer benchmark — not published by the FDIC).";
       return "<li><b>" + f.m.label + "</b> at " + fmt(f.v,1) + f.m.unit +
-             " vs " + fmt(f.peer,1) + f.m.unit + " for size peers. " + (ADVICE[f.m.id]||"") + "</li>";
+             cmp + " " + (ADVICE[f.m.id]||"") + "</li>";
     }).join("");
   }
 
@@ -1452,6 +1582,8 @@ $("run").addEventListener("click", function(){
   }
 
   updateInputSummary();
+  // Roll the refine panel up once it's served its purpose.
+  if (missing === 0 && inputsOpen()) setInputs(false);
   // Step 2 is complete only when every manual field is in; until then it's current.
   if (entered > 0) level = Math.max(level, 2);
   setStep(missing === 0 ? 3 : (entered > 0 ? 2 : level));
