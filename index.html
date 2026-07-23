@@ -101,14 +101,14 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .man.edited input{border-style:solid;border-color:var(--gold)}
 
 /* Score */
-.dial{flex:0 0 auto;position:relative;width:118px;height:118px}
+.dial{flex:0 0 auto;position:relative;width:98px;height:98px}
 .dial svg{transform:rotate(-90deg)}
 .dial .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.dial .val b{font-size:31px;font-weight:700;line-height:1;color:var(--navy)}
-.dial .val em{font-style:normal;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-top:3px}
+.dial .val b{font-size:26px;font-weight:700;line-height:1;color:var(--navy)}
+.dial .val em{font-style:normal;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-top:2px}
 .verdict{flex:1;min-width:230px}
-.verdict .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-  padding:4px 11px;border-radius:20px;margin-bottom:8px}
+.verdict .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  padding:3px 9px;border-radius:20px;margin-bottom:5px}
 .verdict h3{margin:0 0 6px;font-size:20px;color:var(--navy);font-weight:700}
 .verdict p{margin:0;color:var(--mute);font-size:14px}
 .t-good{background:#E4F3EC;color:var(--good)}
@@ -116,27 +116,32 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .t-risk{background:#FBEAEA;color:var(--risk)}
 
 /* Score pane: dial left, pillars right — cuts a full stack height. */
-.scoregrid{display:grid;grid-template-columns:250px minmax(0,1fr);gap:22px;align-items:start}
-.scoreside{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px}
+.scoregrid{display:grid;grid-template-columns:210px minmax(0,1fr);gap:18px;align-items:center}
+.scoreside{display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px}
 .scoreside .verdict{min-width:0}
-.scoreside .verdict h3{font-size:16px;margin:0 0 4px}
-.scoreside .verdict p{font-size:12.5px}
-.pillars{display:grid;grid-template-columns:1fr;gap:9px;margin-top:0}
-.pillar{border:1px solid var(--line);border-radius:var(--r);padding:11px 13px}
-.pillar .pweight{font-size:10.5px;color:var(--mute);margin-bottom:8px}
-.bar{height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:9px}
-.pillar .m{padding:5px 0;font-size:12.5px}
+.scoreside .verdict h3{font-size:15px;margin:0 0 3px;line-height:1.25}
+.scoreside .verdict p{font-size:12px;line-height:1.4}
+.pillars{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:0}
+.pillar{border:1px solid var(--line);border-radius:var(--r);padding:10px 11px;min-width:0}
+.pillar .pweight{font-size:10px;color:var(--mute);margin-bottom:7px;line-height:1.3}
+.bar{height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:0}
+.pillar .m{padding:4px 0;font-size:12px}
+.pdetail{margin-top:7px}
+.pdetail summary{font-size:10.5px;color:var(--blue);cursor:pointer;list-style:none;
+  padding:2px 0;user-select:none}
+.pdetail summary::-webkit-details-marker{display:none}
+.pdetail summary:before{content:"▸";display:inline-block;margin-right:4px;transition:transform .18s}
+.pdetail[open] summary:before{transform:rotate(90deg)}
+@media(max-width:900px){.pillars{grid-template-columns:1fr}}
 @media(max-width:760px){
-  .scoregrid{grid-template-columns:1fr}
-  .scoreside{flex-direction:row;text-align:left;gap:18px}
+  .scoregrid{grid-template-columns:1fr;gap:14px}
+  .scoreside{flex-direction:row;text-align:left;gap:16px}
   .scoreside .verdict{flex:1}
 }
 .pillar .ptop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
 .pillar h4{margin:0;font-size:13px;font-weight:700;color:var(--navy)}
 .pillar .pscore{font-size:18px;font-weight:700}
-.pillar .pweight{font-size:11px;color:var(--mute);margin-bottom:11px}
 .pillar .partial{color:var(--warn);font-weight:700}
-.bar{height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:13px}
 .bar i{display:block;height:100%;border-radius:3px;transition:width .5s ease}
 
 /* Metric rows */
@@ -570,7 +575,7 @@ button.gold:hover{background:#F2AE22}
         <div class="scoregrid">
           <div class="scoreside">
             <div class="dial">
-              <svg width="118" height="118" viewBox="0 0 132 132">
+              <svg width="98" height="98" viewBox="0 0 132 132">
                 <circle cx="66" cy="66" r="56" fill="none" stroke="#E4EAF3" stroke-width="12"/>
                 <circle id="arc" cx="66" cy="66" r="56" fill="none" stroke="var(--blue)" stroke-width="12"
                         stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="352"/>
@@ -710,7 +715,7 @@ button.gold:hover{background:#F2AE22}
 
   <div class="foot">
     <span>Call report data via FDIC BankFind. Scores are directional and not a substitute for a full ALCO review.</span>
-    <span class="pill" id="build">ALM v3.9</span>
+    <span class="pill" id="build">ALM v4.0</span>
   </div>
 
 </div>
@@ -752,7 +757,7 @@ var FDIC = "https://banks.data.fdic.gov/api";
 function viaProxy(fdicUrl){
   return PROXY + "/?url=" + encodeURIComponent(fdicUrl);
 }
-var BUILD = "ALM v3.9 · " + new Date().toISOString().slice(0,10);
+var BUILD = "ALM v4.0 · " + new Date().toISOString().slice(0,10);
 document.getElementById("build").textContent = BUILD;
 
 var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
@@ -1830,10 +1835,11 @@ $("run").addEventListener("click", function(){
       '<div class="pweight">' + Math.round(p.weight*100) + '% of composite · ' +
         (filledN === p.metrics.length
           ? 'all ' + p.metrics.length + ' metrics'
-          : '<b class="partial">' + filledN + ' of ' + p.metrics.length + ' metrics entered</b>') +
+          : '<b class="partial">' + filledN + ' of ' + p.metrics.length + ' entered</b>') +
       '</div>' +
       '<div class="bar"><i style="width:' + (ps==null?0:ps) + '%;background:' + color(ps) + '"></i></div>' +
-      rows + '</div>';
+      '<details class="pdetail"><summary>Metrics</summary>' + rows + '</details>' +
+      '</div>';
   });
   $("pillars").innerHTML = pilHtml;
 
