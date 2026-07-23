@@ -192,6 +192,34 @@ button.gold:hover{background:#F2AE22}
 .btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .mfine{margin:14px 0 0;font-size:11.5px;color:var(--mute)}
 
+/* Tabs */
+.tabs{display:flex;gap:2px;margin-bottom:16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tabs button{background:transparent;color:var(--mute);font-size:13.5px;font-weight:500;
+  padding:10px 16px;border:0;border-bottom:2px solid transparent;border-radius:6px 6px 0 0;
+  margin-bottom:-1px;cursor:pointer}
+.tabs button:hover{color:var(--navy);background:#F2F6FB}
+.tabs button[aria-selected="true"]{color:var(--navy);font-weight:700;border-bottom-color:var(--gold)}
+.tabs button:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.tabs button[hidden]{display:none}
+.pane[hidden]{display:none}
+.pane:focus{outline:none}
+
+/* Forward prompt */
+.next{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:15px 18px;
+  background:var(--card);border:1px solid var(--line);border-left:3px solid var(--blue);
+  border-radius:var(--r);color:inherit;font-family:inherit;font-weight:400;cursor:pointer;
+  margin-bottom:18px;transition:border-color .18s,background .18s,transform .18s}
+.next:hover{background:#F7FAFE;border-color:var(--blue);transform:translateX(2px)}
+.next:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.next span{flex:1;display:block}
+.next b{display:block;font-size:14.5px;color:var(--navy);font-weight:700;margin-bottom:2px}
+.next em{display:block;font-style:normal;font-size:12.5px;color:var(--mute)}
+.next i{font-style:normal;font-size:18px;color:var(--blue);flex:0 0 auto;
+  transition:transform .18s}
+.next:hover i{transform:translateX(3px)}
+@media (prefers-reduced-motion:reduce){.next,.next i{transition:none}.next:hover{transform:none}
+  .next:hover i{transform:none}}
+
 /* Legend */
 .legend{display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:11.5px;color:var(--mute);margin-bottom:16px}
 .legend span{display:flex;align-items:center;gap:6px}
@@ -334,72 +362,106 @@ button.gold:hover{background:#F2AE22}
   <!-- Results -->
   <div id="results" class="hidden">
 
-    <div class="panel">
-      <h2>Composite score</h2>
-      <div class="scorehead">
-        <div class="dial">
-          <svg width="132" height="132" viewBox="0 0 132 132">
-            <circle cx="66" cy="66" r="56" fill="none" stroke="#E4EAF3" stroke-width="12"/>
-            <circle id="arc" cx="66" cy="66" r="56" fill="none" stroke="var(--blue)" stroke-width="12"
-                    stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="352"/>
-          </svg>
-          <div class="val"><b id="total">–</b><em>out of 100</em></div>
+    <div class="tabs" role="tablist" aria-label="Scorecard sections">
+      <button role="tab" id="tab-score" aria-controls="pane-score" aria-selected="true" data-pane="score">Score</button>
+      <button role="tab" id="tab-peers" aria-controls="pane-peers" aria-selected="false" data-pane="peers" tabindex="-1">Peers</button>
+      <button role="tab" id="tab-trend" aria-controls="pane-trend" aria-selected="false" data-pane="trend" tabindex="-1">Trend</button>
+      <button role="tab" id="tab-focus" aria-controls="pane-focus" aria-selected="false" data-pane="focus" tabindex="-1">Focus</button>
+    </div>
+
+    <!-- Score -->
+    <section class="pane on" id="pane-score" role="tabpanel" aria-labelledby="tab-score" tabindex="0">
+      <div class="panel">
+        <h2>Composite score</h2>
+        <div class="scorehead">
+          <div class="dial">
+            <svg width="132" height="132" viewBox="0 0 132 132">
+              <circle cx="66" cy="66" r="56" fill="none" stroke="#E4EAF3" stroke-width="12"/>
+              <circle id="arc" cx="66" cy="66" r="56" fill="none" stroke="var(--blue)" stroke-width="12"
+                      stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="352"/>
+            </svg>
+            <div class="val"><b id="total">–</b><em>out of 100</em></div>
+          </div>
+          <div class="verdict">
+            <span class="tag" id="tag">–</span>
+            <h3 id="headline">–</h3>
+            <p id="summary">–</p>
+          </div>
         </div>
-        <div class="verdict">
-          <span class="tag" id="tag">–</span>
-          <h3 id="headline">–</h3>
-          <p id="summary">–</p>
+        <div class="pillars" id="pillars"></div>
+      </div>
+      <button class="next" data-go="peers">
+        <span><b id="next-score">See how that compares to peers</b>
+        <em>Every metric against size and state benchmarks</em></span>
+        <i aria-hidden="true">→</i>
+      </button>
+    </section>
+
+    <!-- Peers -->
+    <section class="pane" id="pane-peers" role="tabpanel" aria-labelledby="tab-peers" tabindex="0" hidden>
+      <div class="panel">
+        <h2>Against peers</h2>
+        <div class="legend">
+          <span><i class="k-you"></i>This bank</span>
+          <span><i class="k-size"></i><span id="lg-size">Size peers</span></span>
+          <span><i class="k-state"></i><span id="lg-state">State peers</span></span>
+          <span class="bandkey"><i class="k-band"></i>Shaded band runs weak → strong</span>
         </div>
+        <div id="bullets"></div>
       </div>
-      <div class="pillars" id="pillars"></div>
-    </div>
+      <button class="next" data-go="trend">
+        <span><b id="next-peers">Now see which way it's moving</b>
+        <em>Five quarters of filed data</em></span>
+        <i aria-hidden="true">→</i>
+      </button>
+    </section>
 
-    <div class="panel">
-      <h2>Against peers</h2>
-      <div class="legend">
-        <span><i class="k-you"></i>This bank</span>
-        <span><i class="k-size"></i><span id="lg-size">Size peers</span></span>
-        <span><i class="k-state"></i><span id="lg-state">State peers</span></span>
-        <span class="bandkey"><i class="k-band"></i>Shaded band runs weak → strong</span>
+    <!-- Trend -->
+    <section class="pane" id="pane-trend" role="tabpanel" aria-labelledby="tab-trend" tabindex="0" hidden>
+      <div class="panel" id="trendpanel">
+        <h2>Five-quarter trend</h2>
+        <div id="trends"></div>
+        <p class="trendnote" id="trendnote"></p>
       </div>
-      <div id="bullets"></div>
-    </div>
+      <button class="next" data-go="focus">
+        <span><b id="next-trend">So what should you do about it?</b>
+        <em>The metrics worth an ALCO conversation</em></span>
+        <i aria-hidden="true">→</i>
+      </button>
+    </section>
 
-    <div class="panel" id="trendpanel">
-      <h2>Five-quarter trend</h2>
-      <div id="trends"></div>
-      <p class="trendnote" id="trendnote"></p>
-    </div>
-
-    <div class="panel actions">
-      <h2>Where to focus</h2>
-      <ul id="actionlist"></ul>
-    </div>
-
-    <!-- Level 2 gate -->
-    <div class="panel refine" id="refine">
-      <div class="rtext">
-        <h3 id="refinehead">Refine your score</h3>
-        <p id="refinesub"></p>
+    <!-- Focus -->
+    <section class="pane" id="pane-focus" role="tabpanel" aria-labelledby="tab-focus" tabindex="0" hidden>
+      <div class="panel actions">
+        <h2>Where to focus</h2>
+        <ul id="actionlist"></ul>
       </div>
-      <button id="openinputs">Enter my numbers</button>
-    </div>
 
-    <!-- Level 3 gate -->
-    <div class="panel adv">
-      <div class="rtext">
-        <h3>Want the full picture?</h3>
-        <p>This scorecard reads filed data. A SouthState ALM review models your actual cash flows,
-           runs rate shocks against your balance sheet, and reports to your ALCO.</p>
+      <!-- Level 2 gate -->
+      <div class="panel refine" id="refine">
+        <div class="rtext">
+          <h3 id="refinehead">Refine your score</h3>
+          <p id="refinesub"></p>
+        </div>
+        <button id="openinputs">Enter my numbers</button>
       </div>
-      <button id="openmodal" class="gold">Explore ALM services</button>
-    </div>
+
+      <!-- Level 3 gate -->
+      <div class="panel adv">
+        <div class="rtext">
+          <h3>Want the full picture?</h3>
+          <p>This scorecard reads filed data. A SouthState ALM review models your actual cash flows,
+             runs rate shocks against your balance sheet, and reports to your ALCO.</p>
+        </div>
+        <button id="openmodal" class="gold">Explore ALM services</button>
+      </div>
+    </section>
 
   </div>
 
   <div class="foot">
     <span>Call report data via FDIC BankFind. Scores are directional and not a substitute for a full ALCO review.</span>
-    <span class="pill" id="build">ALM v2.1</span>
+    <span class="pill" id="build">ALM v2.2</span>
   </div>
 
 </div>
@@ -441,7 +503,7 @@ var FDIC = "https://banks.data.fdic.gov/api";
 function viaProxy(fdicUrl){
   return PROXY + "/?url=" + encodeURIComponent(fdicUrl);
 }
-var BUILD = "ALM v2.1 · " + new Date().toISOString().slice(0,10);
+var BUILD = "ALM v2.2 · " + new Date().toISOString().slice(0,10);
 document.getElementById("build").textContent = BUILD;
 
 var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
@@ -907,8 +969,20 @@ function spark(series, higherBetter){
 
 function renderTrends(){
   var panel = $("trendpanel");
-  if (history.length < 2){
+  var hasTrend = history.length >= 2;
+  // No history: drop the tab entirely and send the peers prompt straight to Focus.
+  $("tab-trend").hidden = !hasTrend;
+  var peersNext = $("pane-peers").querySelector(".next");
+  peersNext.setAttribute("data-go", hasTrend ? "trend" : "focus");
+  $("next-peers").textContent = hasTrend
+    ? "Now see which way it's moving"
+    : "So what should you do about it?";
+  peersNext.querySelector("em").textContent = hasTrend
+    ? "Five quarters of filed data"
+    : "The metrics worth an ALCO conversation";
+  if (!hasTrend){
     panel.classList.add("hidden");
+    if (!$("pane-trend").hidden) showPane("score");
     return;
   }
   panel.classList.remove("hidden");
@@ -936,6 +1010,62 @@ function renderTrends(){
 
   $("trendnote").textContent = "Green means the metric moved in the favorable direction over the window, " +
     "regardless of level. Trends use filed call report data only — manual overrides don't affect this panel.";
+}
+
+/* ---------- Result tabs ---------- */
+
+var PANES = ["score","peers","trend","focus"];
+
+function showPane(name){
+  PANES.forEach(function(p){
+    var tab = $("tab-"+p), pane = $("pane-"+p);
+    var on = (p === name);
+    tab.setAttribute("aria-selected", on ? "true" : "false");
+    tab.tabIndex = on ? 0 : -1;
+    pane.hidden = !on;
+    pane.classList.toggle("on", on);
+  });
+  resize();
+}
+
+function goPane(name, viaTab){
+  showPane(name);
+  var top = $("results");
+  if (top.scrollIntoView) top.scrollIntoView({behavior:"smooth", block:"start"});
+  post("SCROLL_TOP");
+  if (!viaTab) $("pane-"+name).focus();
+  track("alm_tab", {pane: name, via: viaTab ? "tab" : "prompt"});
+}
+
+PANES.forEach(function(p){
+  $("tab-"+p).addEventListener("click", function(){ goPane(p, true); });
+});
+
+$("results").addEventListener("keydown", function(e){
+  if (e.target.getAttribute("role") !== "tab") return;
+  var i = PANES.indexOf(e.target.getAttribute("data-pane"));
+  var j = -1;
+  if (e.key === "ArrowRight") j = (i+1) % PANES.length;
+  else if (e.key === "ArrowLeft") j = (i-1+PANES.length) % PANES.length;
+  else if (e.key === "Home") j = 0;
+  else if (e.key === "End") j = PANES.length-1;
+  if (j < 0) return;
+  e.preventDefault();
+  // Skip a hidden tab (trend hides without history).
+  var guard = 0;
+  while ($("tab-"+PANES[j]).hidden && guard++ < PANES.length){
+    j = (e.key === "ArrowLeft") ? (j-1+PANES.length) % PANES.length : (j+1) % PANES.length;
+  }
+  showPane(PANES[j]);
+  $("tab-"+PANES[j]).focus();
+});
+
+// Forward prompts
+var nexts = document.querySelectorAll(".next");
+for (var ni=0; ni<nexts.length; ni++){
+  nexts[ni].addEventListener("click", function(){
+    goPane(this.getAttribute("data-go"), false);
+  });
 }
 
 /* ---------- Level flow ---------- */
@@ -1163,6 +1293,16 @@ $("run").addEventListener("click", function(){
 
   $("results").classList.remove("hidden");
   lastScore = total;
+  showPane("score");
+
+  // Prompt copy follows the finding, so it reads as a next thought rather than a label.
+  var weakest = flagged.length ? flagged[0].m.label : null;
+  $("next-score").textContent = weakest
+    ? "See how " + weakest.toLowerCase() + " compares to peers"
+    : "See how that compares to peers";
+  $("next-trend").textContent = total != null && total < 45
+    ? "So what should you do about it?"
+    : "Where the attention is best spent";
 
   // Level 2 gate: only pitch refinement while manual fields are still blank.
   var missing = MANUAL.length - manualCount();
