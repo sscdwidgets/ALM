@@ -256,6 +256,23 @@ button.gold:hover{background:#F2AE22}
 @media (prefers-reduced-motion:reduce){.next,.next i{transition:none}.next:hover{transform:none}
   .next:hover i{transform:none}}
 
+/* No-benchmark metrics: folded away so empty bars don't read as missing data. */
+.nobench{margin-top:10px;border-top:1px dashed var(--line);padding-top:9px}
+.nobench summary{font-size:11.5px;color:var(--mute);cursor:pointer;list-style:none;
+  padding:3px 0;user-select:none}
+.nobench summary::-webkit-details-marker{display:none}
+.nobench summary:before{content:"▸";display:inline-block;margin-right:6px;
+  transition:transform .18s;color:var(--blue)}
+.nobench[open] summary:before{transform:rotate(90deg)}
+.nobench summary:hover{color:var(--navy)}
+.nbrow{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:6px 0 6px 15px;font-size:12.5px;border-bottom:1px solid #F4F6FA}
+.nbrow:last-child{border-bottom:0}
+.nbrow .lbl{color:var(--mute)}
+.nbrow .num{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.nbrow .num small{font-weight:500;color:var(--mute);font-size:10.5px}
+@media (prefers-reduced-motion:reduce){.nobench summary:before{transition:none}}
+
 /* Legend */
 .legend{display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:11.5px;color:var(--mute);margin-bottom:16px}
 .legend span{display:flex;align-items:center;gap:6px}
@@ -539,7 +556,7 @@ button.gold:hover{background:#F2AE22}
 
   <div class="foot">
     <span>Call report data via FDIC BankFind. Scores are directional and not a substitute for a full ALCO review.</span>
-    <span class="pill" id="build">ALM v3.0</span>
+    <span class="pill" id="build">ALM v3.1</span>
   </div>
 
 </div>
@@ -581,7 +598,7 @@ var FDIC = "https://banks.data.fdic.gov/api";
 function viaProxy(fdicUrl){
   return PROXY + "/?url=" + encodeURIComponent(fdicUrl);
 }
-var BUILD = "ALM v3.0 · " + new Date().toISOString().slice(0,10);
+var BUILD = "ALM v3.1 · " + new Date().toISOString().slice(0,10);
 document.getElementById("build").textContent = BUILD;
 
 var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
@@ -1053,16 +1070,24 @@ function peerMark(v, m, peer){
 /* Bullet bar: shaded weak→strong band, peer ticks, bank marker. */
 function bullet(m, val, sizeV, stateV){
   var W = 100, H = 26, PAD = 1.5;
-  // Domain spans the scoring band plus 15% headroom on each side.
+  // Domain spans the scoring band plus 15% headroom on each side. An out-of-band
+  // value extends the domain by a full pad past itself, so the marker never sits
+  // flush against the edge with the band stranded away from it.
   var lo = Math.min(m.best, m.worst), hi = Math.max(m.best, m.worst);
   var pad = (hi - lo) * 0.15;
   var d0 = lo - pad, d1 = hi + pad;
   [val, sizeV, stateV].forEach(function(x){
     if (x == null || !isFinite(x)) return;
-    if (x < d0) d0 = x - pad*0.5;
-    if (x > d1) d1 = x + pad*0.5;
+    if (x < d0) d0 = x - pad;
+    if (x > d1) d1 = x + pad;
   });
-  function x(u){ return PAD + ((u - d0) / (d1 - d0)) * (W - PAD*2); }
+  // Keep every glyph fully inside the viewBox: the widest is the bank marker
+  // at 1.8 units, so reserve half of that plus the base padding.
+  var EDGE = PAD + 1.0;
+  function x(u){
+    var p = PAD + ((u - d0) / (d1 - d0)) * (W - PAD*2);
+    return Math.max(EDGE, Math.min(W - EDGE, p));
+  }
 
   // Gradient runs worst → best in domain order, so flip when best < worst.
   var gid = "g_" + m.id;
@@ -1496,10 +1521,39 @@ $("run").addEventListener("click", function(){
   $("lg-state").textContent = peerLabel(statePeer, st);
 
   $("bullets").innerHTML = PILLARS.map(function(p){
-    var rows = p.metrics.map(function(m){
+    var withPeer = [], without = [];
+    p.metrics.forEach(function(m){
+      var sv = sizeP[m.id], tv = stateP[m.id];
+      var has = (sv != null && isFinite(sv)) || (tv != null && isFinite(tv));
+      (has ? withPeer : without).push(m);
+    });
+    if (!withPeer.length && !without.length) return "";
+
+    var rows = withPeer.map(function(m){
       return bullet(m, v[m.id], sizeP[m.id], stateP[m.id]);
     }).join("");
-    return '<div class="bgroup"><h5>' + p.name + '</h5>' + rows + '</div>';
+
+    // Metrics with no published peer set are folded away — they'd otherwise
+    // render as empty bars and read like missing data.
+    var extra = "";
+    if (without.length){
+      var scoredOnly = without.filter(function(m){ return v[m.id] != null; });
+      extra = '<details class="nobench"><summary>' + without.length +
+        ' metric' + (without.length===1?'':'s') + ' with no published peer set' +
+        (scoredOnly.length ? ' · ' + scoredOnly.length + ' still scored' : '') +
+        '</summary>' +
+        without.map(function(m){
+          var val = v[m.id], s = sc(val, m.best, m.worst);
+          return '<div class="nbrow"><span class="lbl">' + m.label + '</span>' +
+                 '<span class="num" style="color:' + color(s) + '">' +
+                 (val==null?"—":fmt(val,1)+m.unit) +
+                 (s==null?"":' <small>' + Math.round(s) + '/100</small>') + '</span></div>';
+        }).join("") + '</details>';
+    }
+    if (!withPeer.length && !rows) {
+      return '<div class="bgroup"><h5>' + p.name + '</h5>' + extra + '</div>';
+    }
+    return '<div class="bgroup"><h5>' + p.name + '</h5>' + rows + extra + '</div>';
   }).join("");
 
   renderTrends();
