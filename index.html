@@ -40,15 +40,27 @@ input,select{font-family:inherit;font-size:15px;padding:9px 11px;border:1px soli
 input:focus,select:focus{outline:2px solid var(--blue);outline-offset:1px;border-color:var(--blue)}
 .lookup .field{flex:1;min-width:190px}
 .lookup .ac{flex:2.2;min-width:250px}
+/* Search is the entry point — make it read as the primary control. */
+.ac input{padding-left:34px;font-size:15.5px;border-color:#C3D1E4}
+.ac:before{content:"";position:absolute;left:12px;bottom:12px;width:13px;height:13px;
+  border:1.8px solid #93A6C0;border-radius:50%;pointer-events:none;z-index:1}
+.ac:after{content:"";position:absolute;left:22px;bottom:11px;width:6px;height:1.8px;
+  background:#93A6C0;transform:rotate(45deg);pointer-events:none;z-index:1}
+.ac input:focus{border-color:var(--blue)}
 .lookup .cert{flex:1;min-width:160px}
 
 /* Autocomplete */
 .ac{position:relative}
-#suggest{position:absolute;top:100%;left:0;right:0;z-index:40;margin:4px 0 0;padding:4px;
-  list-style:none;background:#fff;border:1px solid var(--line);border-radius:8px;
-  box-shadow:0 8px 24px rgba(0,45,114,.13);max-height:264px;overflow-y:auto;display:none}
+#suggest{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:60;margin:0;padding:5px;
+  list-style:none;background:#fff;border:1px solid #C9D6E8;border-radius:10px;
+  box-shadow:0 12px 32px rgba(0,45,114,.20),0 2px 6px rgba(0,45,114,.08);
+  max-height:290px;overflow-y:auto;display:none}
+#suggest:before{content:"";position:absolute;top:-5px;left:22px;width:9px;height:9px;
+  background:#fff;border-left:1px solid #C9D6E8;border-top:1px solid #C9D6E8;
+  transform:rotate(45deg)}
 #suggest.open{display:block}
-#suggest li{padding:8px 10px;border-radius:5px;cursor:pointer;font-size:13.5px;line-height:1.35}
+#suggest li{padding:8px 10px;border-radius:6px;cursor:pointer;font-size:13.5px;line-height:1.35;
+  position:relative}
 #suggest li[aria-selected="true"],#suggest li:hover{background:#EEF3FA}
 #suggest li b{display:block;color:var(--navy);font-weight:500}
 #suggest li b mark{background:#FFF0C7;color:var(--navy);padding:0 1px;border-radius:2px}
@@ -163,6 +175,9 @@ button:disabled{opacity:.5;cursor:not-allowed}
 
 /* Collapsible panel */
 .collapse{padding:0;overflow:hidden}
+/* The lookup's suggestion list has to escape the card, so this one panel
+   can't clip. Its body is never height-animated, so nothing is lost. */
+.lookuppanel,.lookuppanel .cbody{overflow:visible}
 .chead{display:flex;align-items:center;gap:12px;width:100%;padding:12px 18px;background:transparent;
   border:0;border-radius:var(--r);cursor:pointer;text-align:left;color:inherit;font-family:inherit}
 .chead:hover{background:#F7F9FC}
@@ -309,20 +324,25 @@ button.gold:hover{background:#F2AE22}
   font-weight:500;margin-top:14px}
 .gdone .dchk{background:var(--good)}
 
-/* Peer sub-tabs: one pillar at a time, so strips get full width back. */
-.subtabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
-.subtabs button{display:flex;align-items:center;gap:7px;background:#F2F5FA;color:var(--mute);
-  font-size:12.5px;font-weight:500;padding:7px 13px;border:1px solid transparent;
-  border-radius:20px;cursor:pointer}
-.subtabs button:hover{background:#E9EFF7;color:var(--navy)}
-.subtabs button[aria-selected="true"]{background:var(--navy);color:#fff;font-weight:700}
-.subtabs button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+/* Peer sub-tabs: one pillar at a time, so strips get full width back.
+   Styled as a segmented control — pills read as passive badges. */
+.subtabs{display:flex;gap:0;margin-bottom:14px;flex-wrap:wrap;
+  background:#EDF1F7;border:1px solid #DDE5EF;border-radius:9px;padding:3px}
+.subtabs button{flex:1;min-width:130px;display:flex;align-items:center;justify-content:center;
+  gap:7px;background:transparent;color:var(--mute);font-size:12.5px;font-weight:600;
+  padding:8px 12px;border:0;border-radius:7px;cursor:pointer;
+  transition:background .15s,color .15s,box-shadow .15s}
+.subtabs button:hover{color:var(--navy);background:rgba(255,255,255,.6)}
+.subtabs button[aria-selected="true"]{background:#fff;color:var(--navy);font-weight:700;
+  box-shadow:0 1px 3px rgba(0,45,114,.16)}
+.subtabs button:focus-visible{outline:2px solid var(--blue);outline-offset:-1px}
 .sbadge{font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:10px;
-  background:rgba(255,255,255,.22);font-variant-numeric:tabular-nums}
-.subtabs button[aria-selected="false"] .sbadge.up{background:#E4F3EC;color:var(--good)}
-.subtabs button[aria-selected="false"] .sbadge.down{background:#FBEAEA;color:var(--risk)}
-.subtabs button[aria-selected="false"] .sbadge.flat{background:#E7ECF3;color:var(--mute)}
+  font-variant-numeric:tabular-nums;background:#E7ECF3;color:var(--mute)}
+.sbadge.up{background:#E4F3EC;color:var(--good)}
+.sbadge.down{background:#FBEAEA;color:var(--risk)}
 .subpane[hidden]{display:none}
+.subhint{font-size:11.5px;color:var(--mute);margin:-6px 0 12px}
+@media(max-width:560px){.subtabs button{min-width:0;font-size:11.5px;padding:7px 8px}}
 
 #bullets{display:block}
 
@@ -582,6 +602,7 @@ button.gold:hover{background:#F2AE22}
           <button role="tab" id="sub-funding" aria-controls="sp-funding" aria-selected="false" data-sub="funding" tabindex="-1">Funding mix</button>
           <button role="tab" id="sub-liquidity" aria-controls="sp-liquidity" aria-selected="false" data-sub="liquidity" tabindex="-1">Liquidity</button>
         </div>
+        <p class="subhint">Select a pillar to see its metrics — the badge is that pillar's average percentile.</p>
         <div class="legend">
           <span><i class="k-you"></i>This bank</span>
           <span><i class="k-state"></i><span id="lg-state">State peers</span></span>
@@ -688,7 +709,7 @@ button.gold:hover{background:#F2AE22}
 
   <div class="foot">
     <span>Call report data via FDIC BankFind. Scores are directional and not a substitute for a full ALCO review.</span>
-    <span class="pill" id="build">ALM v3.7</span>
+    <span class="pill" id="build">ALM v3.8</span>
   </div>
 
 </div>
@@ -730,7 +751,7 @@ var FDIC = "https://banks.data.fdic.gov/api";
 function viaProxy(fdicUrl){
   return PROXY + "/?url=" + encodeURIComponent(fdicUrl);
 }
-var BUILD = "ALM v3.7 · " + new Date().toISOString().slice(0,10);
+var BUILD = "ALM v3.8 · " + new Date().toISOString().slice(0,10);
 document.getElementById("build").textContent = BUILD;
 
 var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
