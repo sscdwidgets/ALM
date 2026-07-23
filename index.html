@@ -309,13 +309,22 @@ button.gold:hover{background:#F2AE22}
   font-weight:500;margin-top:14px}
 .gdone .dchk{background:var(--good)}
 
-/* Peer groups sit two-up on wide screens to cut scroll. Three columns would
-   squeeze each strip's SVG to ~296px, rendering the gold state tick near 2px —
-   indistinguishable from the navy marker at close ranks. Two is the ceiling. */
-#bullets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px;align-items:start}
-#bullets .bgroup{margin-bottom:4px;min-width:0}
-#bullets .bgroup > h5{margin:0 0 7px;padding-bottom:4px}
-@media(max-width:820px){#bullets{grid-template-columns:1fr}}
+/* Peer sub-tabs: one pillar at a time, so strips get full width back. */
+.subtabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.subtabs button{display:flex;align-items:center;gap:7px;background:#F2F5FA;color:var(--mute);
+  font-size:12.5px;font-weight:500;padding:7px 13px;border:1px solid transparent;
+  border-radius:20px;cursor:pointer}
+.subtabs button:hover{background:#E9EFF7;color:var(--navy)}
+.subtabs button[aria-selected="true"]{background:var(--navy);color:#fff;font-weight:700}
+.subtabs button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.sbadge{font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:10px;
+  background:rgba(255,255,255,.22);font-variant-numeric:tabular-nums}
+.subtabs button[aria-selected="false"] .sbadge.up{background:#E4F3EC;color:var(--good)}
+.subtabs button[aria-selected="false"] .sbadge.down{background:#FBEAEA;color:var(--risk)}
+.subtabs button[aria-selected="false"] .sbadge.flat{background:#E7ECF3;color:var(--mute)}
+.subpane[hidden]{display:none}
+
+#bullets{display:block}
 
 /* Percentile strips */
 .prow{display:grid;grid-template-columns:1fr 34% 92px;gap:12px;align-items:center;
@@ -332,15 +341,6 @@ button.gold:hover{background:#F2AE22}
 .prank.down b{color:var(--risk)}
 .prank.flat b{color:var(--mute)}
 .lgsize{color:var(--mute)}
-/* Inside a two-column grid each strip has roughly half the width, so the
-   stacked layout has to kick in well before the viewport gets narrow. */
-@media(min-width:821px){
-  .prow{grid-template-columns:1fr 76px;gap:6px 10px}
-  .prow svg{grid-column:1/-1;order:3;margin-top:2px}
-  .pmeta{order:1;min-width:0}
-  .prank{order:2}
-  .pmeta b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-}
 @media(max-width:620px){
   .prow{grid-template-columns:1fr 78px;gap:8px}
   .prow svg{grid-column:1/-1;order:3}
@@ -577,6 +577,11 @@ button.gold:hover{background:#F2AE22}
       <div class="panel">
         <h2>Percentile rank</h2>
         <div class="peerhead" id="peerhead"></div>
+        <div class="subtabs" role="tablist" aria-label="Pillar" id="subtabs">
+          <button role="tab" id="sub-rate" aria-controls="sp-rate" aria-selected="true" data-sub="rate">Rate sensitivity</button>
+          <button role="tab" id="sub-funding" aria-controls="sp-funding" aria-selected="false" data-sub="funding" tabindex="-1">Funding mix</button>
+          <button role="tab" id="sub-liquidity" aria-controls="sp-liquidity" aria-selected="false" data-sub="liquidity" tabindex="-1">Liquidity</button>
+        </div>
         <div class="legend">
           <span><i class="k-you"></i>This bank</span>
           <span><i class="k-state"></i><span id="lg-state">State peers</span></span>
@@ -823,6 +828,7 @@ function req(url){
 function loadByCert(cert){
   setStatus("Loading call report…");
   history = [];
+  var loaded = false;
   $("results").classList.add("hidden");
   var inst = viaProxy(FDIC + "/institutions?filters=CERT:" + encodeURIComponent(cert) +
              "&fields=NAME,CITY,STALP,CERT,ASSET,REPDTE&limit=1");
@@ -870,9 +876,15 @@ function loadByCert(cert){
           ? "Benchmarked against " + msgs.join(" and ") + ". Five fields aren't in the FDIC dataset — add them to complete the score."
           : "Peer data unavailable for this group. Five fields aren't in the FDIC dataset — add them to complete the score.");
         $("run").click();
+      }).catch(function(){
+        // Peer failure doesn't undo a successful lookup — score on filed data.
+        setStatus("Loaded, but peer benchmarks are unavailable right now.", true);
+        $("run").click();
       });
+      loaded = true;
     });
   }).catch(function(e){
+    if (loaded) return;   // the bank did load; a later step failed
     $("lookuppanel").classList.remove("complete");
     $("lookupsum").textContent = "";
     setLookup(true);
@@ -1505,6 +1517,46 @@ $("gsubmit").addEventListener("click", function(){
   });
 });
 
+/* ---------- Peer sub-tabs ---------- */
+
+var SUBS = ["rate","funding","liquidity"];
+var activeSub = "rate";
+
+function showSub(name){
+  if (SUBS.indexOf(name) < 0) name = "rate";
+  activeSub = name;
+  SUBS.forEach(function(k){
+    var tab = $("sub-"+k), pane = document.getElementById("sp-"+k);
+    if (!tab) return;
+    var on = (k === name);
+    tab.setAttribute("aria-selected", on ? "true" : "false");
+    tab.tabIndex = on ? 0 : -1;
+    if (pane) pane.hidden = !on;
+  });
+  resize();
+}
+
+SUBS.forEach(function(k){
+  var t = $("sub-"+k);
+  if (t) t.addEventListener("click", function(){
+    showSub(k);
+    track("alm_subtab", {pillar: k});
+  });
+});
+
+$("subtabs").addEventListener("keydown", function(e){
+  if (e.target.getAttribute("role") !== "tab") return;
+  var i = SUBS.indexOf(e.target.getAttribute("data-sub")), j = -1;
+  if (e.key === "ArrowRight") j = (i+1) % SUBS.length;
+  else if (e.key === "ArrowLeft") j = (i-1+SUBS.length) % SUBS.length;
+  else if (e.key === "Home") j = 0;
+  else if (e.key === "End") j = SUBS.length-1;
+  if (j < 0) return;
+  e.preventDefault();
+  showSub(SUBS[j]);
+  $("sub-"+SUBS[j]).focus();
+});
+
 /* ---------- Result tabs ---------- */
 
 var PANES = ["score","peers","trend","focus"];
@@ -1829,12 +1881,32 @@ $("run").addEventListener("click", function(){
       '</div>';
   }
 
-  $("bullets").innerHTML = PILLARS.map(function(p){
+  var SUBKEY = {"Rate sensitivity":"rate","Funding mix & beta":"funding","Liquidity & concentration":"liquidity"};
+
+  $("bullets").innerHTML = PILLARS.map(function(p, pi){
+    var key = SUBKEY[p.name] || ("p" + pi);
     var withPeer = [], without = [];
     p.metrics.forEach(function(m){
       var d = sizeD[m.id];
       (d && d.length ? withPeer : without).push(m);
     });
+
+    // Average rank for this pillar drives the tab badge.
+    var prs = [];
+    withPeer.forEach(function(m){
+      var r = goodRank(sizeD[m.id], v[m.id], m);
+      if (r != null) prs.push(r);
+    });
+    var pAvg = prs.length ? avg(prs) : null;
+    var badge = $("sub-" + key);
+    if (badge){
+      var old = badge.querySelector(".sbadge");
+      if (old) old.parentNode.removeChild(old);
+      var b = document.createElement("span");
+      b.className = "sbadge " + (pAvg == null ? "flat" : pAvg >= 50 ? "up" : "down");
+      b.textContent = pAvg == null ? "—" : ordinal(Math.round(pAvg));
+      badge.appendChild(b);
+    }
 
     var rows = withPeer.map(function(m){
       return pstrip(m, v[m.id], sizeD[m.id], stateD[m.id], sizeP[m.id]);
@@ -1854,9 +1926,14 @@ $("run").addEventListener("click", function(){
                  (s==null?"":' <small>' + Math.round(s) + '/100</small>') + '</span></div>';
         }).join("") + '</details>';
     }
-    if (!rows && !extra) return "";
-    return '<div class="bgroup"><h5>' + p.name + '</h5>' + rows + extra + '</div>';
+
+    return '<div class="subpane" id="sp-' + key + '" role="tabpanel" ' +
+           'aria-labelledby="sub-' + key + '"' + (pi === 0 ? '' : ' hidden') + '>' +
+           (rows || '<p class="pnone">No benchmarked metrics in this pillar.</p>') +
+           extra + '</div>';
   }).join("");
+
+  showSub(activeSub);
 
   renderTrends();
 
