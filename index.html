@@ -17,19 +17,19 @@
   --r:10px;
 }
 *{box-sizing:border-box}
-body{margin:0;padding:20px;background:var(--bg);color:var(--ink);
+body{margin:0;padding:16px;background:var(--bg);color:var(--ink);
   font-family:'Cera Pro',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   font-size:15px;line-height:1.5}
 .wrap{max-width:1080px;margin:0 auto}
 
 /* Header */
-.hdr{border-left:5px solid var(--gold);padding-left:16px;margin-bottom:22px}
-.hdr h1{margin:4px 0 4px;font-size:27px;font-weight:700;color:var(--navy);letter-spacing:-.015em}
-.hdr p{margin:0;color:var(--mute);font-size:14px;max-width:62ch}
+.hdr{border-left:5px solid var(--gold);padding-left:16px;margin-bottom:14px}
+.hdr h1{margin:0 0 3px;font-size:23px;font-weight:700;color:var(--navy);letter-spacing:-.015em}
+.hdr p{margin:0;color:var(--mute);font-size:13px;max-width:74ch}
 
 /* Panels */
-.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-bottom:18px}
-.panel h2{margin:0 0 14px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);font-weight:700}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:15px 18px;margin-bottom:12px}
+.panel h2{margin:0 0 11px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);font-weight:700}
 
 /* Lookup */
 .lookup{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
@@ -75,7 +75,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .bankline span{color:var(--mute);font-size:13px}
 
 /* Inputs grid */
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:11px}
 .sub{grid-column:1/-1;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--blue);font-weight:700;padding-bottom:5px;border-bottom:1px solid var(--line);margin-top:4px}
 .sub:first-child{margin-top:0}
@@ -89,11 +89,10 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .man.edited input{border-style:solid;border-color:var(--gold)}
 
 /* Score */
-.scorehead{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
-.dial{flex:0 0 auto;position:relative;width:132px;height:132px}
+.dial{flex:0 0 auto;position:relative;width:118px;height:118px}
 .dial svg{transform:rotate(-90deg)}
 .dial .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.dial .val b{font-size:34px;font-weight:700;line-height:1;color:var(--navy)}
+.dial .val b{font-size:31px;font-weight:700;line-height:1;color:var(--navy)}
 .dial .val em{font-style:normal;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-top:3px}
 .verdict{flex:1;min-width:230px}
 .verdict .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
@@ -104,12 +103,25 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .t-warn{background:#FDF3E0;color:var(--warn)}
 .t-risk{background:#FBEAEA;color:var(--risk)}
 
-/* Pillars */
-.pillars{display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:14px;margin-top:20px}
-.pillar{border:1px solid var(--line);border-radius:var(--r);padding:16px}
+/* Score pane: dial left, pillars right — cuts a full stack height. */
+.scoregrid{display:grid;grid-template-columns:250px minmax(0,1fr);gap:22px;align-items:start}
+.scoreside{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px}
+.scoreside .verdict{min-width:0}
+.scoreside .verdict h3{font-size:16px;margin:0 0 4px}
+.scoreside .verdict p{font-size:12.5px}
+.pillars{display:grid;grid-template-columns:1fr;gap:9px;margin-top:0}
+.pillar{border:1px solid var(--line);border-radius:var(--r);padding:11px 13px}
+.pillar .pweight{font-size:10.5px;color:var(--mute);margin-bottom:8px}
+.bar{height:4px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:9px}
+.pillar .m{padding:5px 0;font-size:12.5px}
+@media(max-width:760px){
+  .scoregrid{grid-template-columns:1fr}
+  .scoreside{flex-direction:row;text-align:left;gap:18px}
+  .scoreside .verdict{flex:1}
+}
 .pillar .ptop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
-.pillar h4{margin:0;font-size:14px;font-weight:700;color:var(--navy)}
-.pillar .pscore{font-size:20px;font-weight:700}
+.pillar h4{margin:0;font-size:13px;font-weight:700;color:var(--navy)}
+.pillar .pscore{font-size:18px;font-weight:700}
 .pillar .pweight{font-size:11px;color:var(--mute);margin-bottom:11px}
 .pillar .partial{color:var(--warn);font-weight:700}
 .bar{height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:13px}
@@ -117,7 +129,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 
 /* Metric rows */
 .m{display:flex;justify-content:space-between;align-items:center;gap:10px;
-  padding:7px 0;border-bottom:1px solid #F0F3F8;font-size:13px}
+  padding:5px 0;border-bottom:1px solid #F0F3F8;font-size:12.5px}
 .m:last-child{border-bottom:0}
 .m .lbl{color:var(--mute);flex:1}
 .m .num{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -125,20 +137,20 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
 
 /* Progress bar */
-.prog{position:relative;margin:0 0 22px;padding:4px 0 0}
-.prog .ptrack{position:absolute;top:15px;left:16.666%;right:16.666%;height:3px;
+.prog{position:relative;margin:0 0 13px;padding:2px 0 0}
+.prog .ptrack{position:absolute;top:12px;left:16.666%;right:16.666%;height:3px;
   background:var(--line);border-radius:2px;overflow:hidden}
 .prog .pfill{height:100%;width:0;background:var(--navy);border-radius:2px;
   transition:width .45s cubic-bezier(.4,0,.2,1)}
 .prog ol{position:relative;display:flex;list-style:none;margin:0;padding:0}
-.prog li{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center}
+.prog li{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center}
 .prog li b{display:flex;align-items:center;justify-content:center;position:relative;
-  width:25px;height:25px;border-radius:50%;background:var(--bg);
+  width:21px;height:21px;border-radius:50%;background:var(--bg);
   box-shadow:0 0 0 3px var(--bg);border:2px solid var(--line);
-  color:var(--mute);font-size:11.5px;font-weight:700;
+  color:var(--mute);font-size:10.5px;font-weight:700;
   transition:background .3s,border-color .3s,color .3s}
-.prog .pchk{display:none;font-size:12px;line-height:1}
-.prog .plabel{font-size:12px;color:var(--mute);line-height:1.3;max-width:14ch;
+.prog .pchk{display:none;font-size:11px;line-height:1}
+.prog .plabel{font-size:11px;color:var(--mute);line-height:1.25;max-width:14ch;
   transition:color .3s}
 .prog li.on b{background:var(--navy);border-color:var(--navy);color:#fff}
 .prog li.on .plabel{color:var(--navy);font-weight:700}
@@ -151,7 +163,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 
 /* Collapsible panel */
 .collapse{padding:0;overflow:hidden}
-.chead{display:flex;align-items:center;gap:12px;width:100%;padding:16px 20px;background:transparent;
+.chead{display:flex;align-items:center;gap:12px;width:100%;padding:12px 18px;background:transparent;
   border:0;border-radius:var(--r);cursor:pointer;text-align:left;color:inherit;font-family:inherit}
 .chead:hover{background:#F7F9FC}
 .chead:disabled{cursor:not-allowed;opacity:.55}
@@ -160,12 +172,12 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .csum{flex:1;font-size:12.5px;color:var(--mute);font-weight:400;letter-spacing:0;text-transform:none}
 .carrow{font-size:13px;color:var(--mute);transition:transform .22s ease}
 .chead[aria-expanded="true"] .carrow{transform:rotate(180deg)}
-.cbody{display:none;padding:0 20px 20px}
+.cbody{display:none;padding:0 18px 18px}
 .cbody.open{display:block}
-.chelp{margin:0 0 16px;font-size:13px;color:var(--mute);max-width:70ch}
+.chelp{margin:0 0 13px;font-size:12.5px;color:var(--mute);max-width:74ch}
 
 /* CTA panels */
-.refine,.adv,.donebar{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.refine,.adv,.donebar{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .donebar{border-left:4px solid var(--good);background:linear-gradient(180deg,#F4FBF7,#fff)}
 .donebar h3{margin:0 0 5px;font-size:16px;color:var(--navy);font-weight:700;
   display:flex;align-items:center;gap:8px}
@@ -175,8 +187,8 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .refine{border-left:4px solid var(--blue)}
 .adv{border-left:4px solid var(--gold);background:linear-gradient(180deg,#FFFDF7,#fff)}
 .rtext{flex:1;min-width:250px}
-.refine h3,.adv h3{margin:0 0 5px;font-size:16px;color:var(--navy);font-weight:700}
-.refine p,.adv p{margin:0;font-size:13.5px;color:var(--mute);max-width:64ch}
+.refine h3,.adv h3{margin:0 0 3px;font-size:15px;color:var(--navy);font-weight:700}
+.refine p,.adv p{margin:0;font-size:13px;color:var(--mute);max-width:64ch}
 button.gold{background:var(--gold);color:var(--navy)}
 button.gold:hover{background:#F2AE22}
 
@@ -229,9 +241,10 @@ button.gold:hover{background:#F2AE22}
 .man input::placeholder{color:#B9C4D4}
 
 /* Tabs */
-.tabs{display:flex;gap:2px;margin-bottom:16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-.tabs button{background:transparent;color:var(--mute);font-size:13.5px;font-weight:500;
-  padding:10px 16px;border:0;border-bottom:2px solid transparent;border-radius:6px 6px 0 0;
+.tabs{display:flex;gap:2px;margin-bottom:13px;border-bottom:1px solid var(--line);flex-wrap:wrap;
+  position:sticky;top:0;z-index:20;background:var(--bg);padding-top:4px}
+.tabs button{background:transparent;color:var(--mute);font-size:13px;font-weight:500;
+  padding:8px 14px;border:0;border-bottom:2px solid transparent;border-radius:6px 6px 0 0;
   margin-bottom:-1px;cursor:pointer}
 .tabs button:hover{color:var(--navy);background:#F2F6FB}
 .tabs button[aria-selected="true"]{color:var(--navy);font-weight:700;border-bottom-color:var(--gold)}
@@ -241,15 +254,15 @@ button.gold:hover{background:#F2AE22}
 .pane:focus{outline:none}
 
 /* Forward prompt */
-.next{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:15px 18px;
+.next{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:11px 15px;
   background:var(--card);border:1px solid var(--line);border-left:3px solid var(--blue);
   border-radius:var(--r);color:inherit;font-family:inherit;font-weight:400;cursor:pointer;
-  margin-bottom:18px;transition:border-color .18s,background .18s,transform .18s}
+  margin-bottom:12px;transition:border-color .18s,background .18s,transform .18s}
 .next:hover{background:#F7FAFE;border-color:var(--blue);transform:translateX(2px)}
 .next:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .next span{flex:1;display:block}
-.next b{display:block;font-size:14.5px;color:var(--navy);font-weight:700;margin-bottom:2px}
-.next em{display:block;font-style:normal;font-size:12.5px;color:var(--mute)}
+.next b{display:block;font-size:13.5px;color:var(--navy);font-weight:700;margin-bottom:1px}
+.next em{display:block;font-style:normal;font-size:12px;color:var(--mute)}
 .next i{font-style:normal;font-size:18px;color:var(--blue);flex:0 0 auto;
   transition:transform .18s}
 .next:hover i{transform:translateX(3px)}
@@ -257,10 +270,10 @@ button.gold:hover{background:#F2AE22}
   .next:hover i{transform:none}}
 
 /* Peer standing header */
-.peerhead{display:flex;gap:22px;align-items:center;flex-wrap:wrap;padding:2px 0 18px;
-  margin-bottom:16px;border-bottom:1px solid var(--line)}
-.pbig{flex:0 0 auto;text-align:center;padding:10px 20px;background:#F4F7FC;border-radius:10px}
-.pbig b{display:block;font-size:30px;font-weight:700;color:var(--navy);line-height:1;
+.peerhead{display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:0 0 13px;
+  margin-bottom:12px;border-bottom:1px solid var(--line)}
+.pbig{flex:0 0 auto;text-align:center;padding:8px 16px;background:#F4F7FC;border-radius:10px}
+.pbig b{display:block;font-size:26px;font-weight:700;color:var(--navy);line-height:1;
   font-variant-numeric:tabular-nums}
 .pbig em{display:block;font-style:normal;font-size:10.5px;letter-spacing:.08em;
   text-transform:uppercase;color:var(--mute);margin-top:5px}
@@ -279,12 +292,12 @@ button.gold:hover{background:#F2AE22}
 .unlocked .blurveil{display:none}
 .unlocked .gate{display:none}
 
-.gate{margin-top:6px;padding:20px;background:#FFFDF7;border:1px solid #F0E3C4;
+.gate{margin-top:4px;padding:16px;background:#FFFDF7;border:1px solid #F0E3C4;
   border-radius:var(--r)}
 .gatehead h3{margin:0 0 6px;font-size:17px;color:var(--navy);font-weight:700}
-.gatehead p{margin:0 0 16px;font-size:13.5px;color:var(--mute);line-height:1.5;max-width:66ch}
-.gform{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;
-  margin-bottom:14px}
+.gatehead p{margin:0 0 12px;font-size:13px;color:var(--mute);line-height:1.5;max-width:66ch}
+.gform{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;
+  margin-bottom:11px}
 .gfield{display:flex;flex-direction:column;gap:5px}
 .gfield label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);
   font-weight:500}
@@ -296,14 +309,17 @@ button.gold:hover{background:#F2AE22}
   font-weight:500;margin-top:14px}
 .gdone .dchk{background:var(--good)}
 
-/* Peer groups sit two-up on wide screens to cut scroll. */
-#bullets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 26px;align-items:start}
-#bullets .bgroup{margin-bottom:6px;min-width:0}
+/* Peer groups sit two-up on wide screens to cut scroll. Three columns would
+   squeeze each strip's SVG to ~296px, rendering the gold state tick near 2px —
+   indistinguishable from the navy marker at close ranks. Two is the ceiling. */
+#bullets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px;align-items:start}
+#bullets .bgroup{margin-bottom:4px;min-width:0}
+#bullets .bgroup > h5{margin:0 0 7px;padding-bottom:4px}
 @media(max-width:820px){#bullets{grid-template-columns:1fr}}
 
 /* Percentile strips */
-.prow{display:grid;grid-template-columns:1fr 34% 92px;gap:14px;align-items:center;
-  padding:9px 0;border-bottom:1px solid #F3F6FA}
+.prow{display:grid;grid-template-columns:1fr 34% 92px;gap:12px;align-items:center;
+  padding:6px 0;border-bottom:1px solid #F3F6FA}
 .prow:last-child{border-bottom:0}
 .pmeta b{display:block;font-size:13px;font-weight:500;color:var(--ink);line-height:1.3}
 .pvals{display:block;font-size:11.5px;color:var(--mute);margin-top:2px;
@@ -369,8 +385,8 @@ button.gold:hover{background:#F2AE22}
 .up{color:var(--good)} .down{color:var(--risk)} .flat{color:var(--mute)}
 
 /* Trends */
-.tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px}
-.tcard{border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px}
+.tcard{border:1px solid var(--line);border-radius:var(--r);padding:11px}
 .tcard .ttop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
 .tcard h4{margin:0;font-size:13px;font-weight:700;color:var(--navy)}
 .tcard .tnow{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--navy)}
@@ -388,7 +404,7 @@ button.gold:hover{background:#F2AE22}
 .pill{background:#E9EEF6;color:var(--navy);border-radius:20px;padding:3px 10px;font-weight:700;letter-spacing:.04em}
 .hidden{display:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-@media(max-width:560px){body{padding:14px}.hdr h1{font-size:22px}.scorehead{gap:16px}}
+@media(max-width:560px){body{padding:12px}.hdr h1{font-size:20px}}
 </style>
 </head>
 <body>
@@ -396,9 +412,7 @@ button.gold:hover{background:#F2AE22}
 
   <div class="hdr">
     <h1>ALM Scorecard</h1>
-    <p>Pull a bank's latest call report by FDIC certificate number, adjust any input, and see a composite
-       asset-liability score across rate sensitivity, funding mix, and liquidity — benchmarked against both
-       asset-size and in-state peers.</p>
+    <p>Score any bank's asset-liability position from its call report, ranked against live size and state peers.</p>
   </div>
 
   <!-- Lookup -->
@@ -531,24 +545,25 @@ button.gold:hover{background:#F2AE22}
 
     <!-- Score -->
     <section class="pane on" id="pane-score" role="tabpanel" aria-labelledby="tab-score" tabindex="0">
-      <div class="panel">
-        <h2>Composite score</h2>
-        <div class="scorehead">
-          <div class="dial">
-            <svg width="132" height="132" viewBox="0 0 132 132">
-              <circle cx="66" cy="66" r="56" fill="none" stroke="#E4EAF3" stroke-width="12"/>
-              <circle id="arc" cx="66" cy="66" r="56" fill="none" stroke="var(--blue)" stroke-width="12"
-                      stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="352"/>
-            </svg>
-            <div class="val"><b id="total">–</b><em>out of 100</em></div>
+      <div class="panel scorepanel">
+        <div class="scoregrid">
+          <div class="scoreside">
+            <div class="dial">
+              <svg width="118" height="118" viewBox="0 0 132 132">
+                <circle cx="66" cy="66" r="56" fill="none" stroke="#E4EAF3" stroke-width="12"/>
+                <circle id="arc" cx="66" cy="66" r="56" fill="none" stroke="var(--blue)" stroke-width="12"
+                        stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="352"/>
+              </svg>
+              <div class="val"><b id="total">–</b><em>out of 100</em></div>
+            </div>
+            <div class="verdict">
+              <span class="tag" id="tag">–</span>
+              <h3 id="headline">–</h3>
+              <p id="summary">–</p>
+            </div>
           </div>
-          <div class="verdict">
-            <span class="tag" id="tag">–</span>
-            <h3 id="headline">–</h3>
-            <p id="summary">–</p>
-          </div>
+          <div class="pillars" id="pillars"></div>
         </div>
-        <div class="pillars" id="pillars"></div>
       </div>
       <button class="next" data-go="peers">
         <span><b id="next-score">See how that compares to peers</b>
@@ -668,7 +683,7 @@ button.gold:hover{background:#F2AE22}
 
   <div class="foot">
     <span>Call report data via FDIC BankFind. Scores are directional and not a substitute for a full ALCO review.</span>
-    <span class="pill" id="build">ALM v3.5</span>
+    <span class="pill" id="build">ALM v3.6</span>
   </div>
 
 </div>
@@ -710,7 +725,7 @@ var FDIC = "https://banks.data.fdic.gov/api";
 function viaProxy(fdicUrl){
   return PROXY + "/?url=" + encodeURIComponent(fdicUrl);
 }
-var BUILD = "ALM v3.5 · " + new Date().toISOString().slice(0,10);
+var BUILD = "ALM v3.6 · " + new Date().toISOString().slice(0,10);
 document.getElementById("build").textContent = BUILD;
 
 var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
@@ -1287,22 +1302,22 @@ function pstrip(m, val, sizeD, stateD, sizeMed){
   var srank = goodRank(stateD, val, m);
   if (rank == null && srank == null) return "";
 
-  var W = 100, H = 30;
+  var W = 100, H = 22;
   var blocks = "", tints = ["#FBEAEA","#FBEFE0","#EDF5EC","#E1F2E9"];
   for (var i=0;i<4;i++){
-    blocks += '<rect x="' + (i*25) + '" y="9" width="25" height="13" fill="' + tints[i] + '"/>';
+    blocks += '<rect x="' + (i*25) + '" y="7" width="25" height="9" fill="' + tints[i] + '"/>';
   }
   var divs = "";
   [25,50,75].forEach(function(p){
-    divs += '<rect x="' + (p-0.15) + '" y="9" width="0.3" height="13" fill="#fff"/>';
+    divs += '<rect x="' + (p-0.15) + '" y="7" width="0.3" height="9" fill="#fff"/>';
   });
 
   function cx(p){ return Math.max(1.2, Math.min(W-1.2, p)); }
 
   var stateTick = (srank == null) ? "" :
-    '<rect x="' + (cx(srank)-0.35).toFixed(2) + '" y="6" width="0.7" height="19" fill="var(--gold)"/>';
+    '<rect x="' + (cx(srank)-0.35).toFixed(2) + '" y="4.5" width="0.7" height="14" fill="var(--gold)"/>';
   var youMark = (rank == null) ? "" :
-    '<rect x="' + (cx(rank)-0.85).toFixed(2) + '" y="4" width="1.7" height="22" fill="var(--navy)" rx="0.5"/>';
+    '<rect x="' + (cx(rank)-0.85).toFixed(2) + '" y="3" width="1.7" height="17" fill="var(--navy)" rx="0.5"/>';
 
   var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" width="100%" ' +
     'height="' + H + '" role="img" aria-label="' + esc(m.label) + ': ' +
