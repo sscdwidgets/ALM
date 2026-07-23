@@ -125,6 +125,73 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .m .peers{font-size:11px;color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
 
+/* Step rail */
+.rail{display:flex;gap:8px;list-style:none;margin:0 0 18px;padding:0;flex-wrap:wrap}
+.rail li{flex:1;min-width:132px;display:flex;align-items:center;gap:9px;padding:10px 13px;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  font-size:12.5px;color:var(--mute);transition:border-color .2s,color .2s}
+.rail li b{display:flex;align-items:center;justify-content:center;width:21px;height:21px;flex:0 0 21px;
+  border-radius:50%;background:#E4EAF3;color:var(--mute);font-size:11px;font-weight:700}
+.rail li.on{border-color:var(--navy);color:var(--navy)}
+.rail li.on b{background:var(--navy);color:#fff}
+.rail li.done b{background:var(--good);color:#fff}
+.rail li.done{color:var(--ink)}
+
+/* Collapsible panel */
+.collapse{padding:0;overflow:hidden}
+.chead{display:flex;align-items:center;gap:12px;width:100%;padding:16px 20px;background:transparent;
+  border:0;border-radius:var(--r);cursor:pointer;text-align:left;color:inherit;font-family:inherit}
+.chead:hover{background:#F7F9FC}
+.chead:disabled{cursor:not-allowed;opacity:.55}
+.chead:disabled:hover{background:transparent}
+.ctitle{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);font-weight:700}
+.csum{flex:1;font-size:12.5px;color:var(--mute);font-weight:400;letter-spacing:0;text-transform:none}
+.carrow{font-size:13px;color:var(--mute);transition:transform .22s ease}
+.chead[aria-expanded="true"] .carrow{transform:rotate(180deg)}
+.cbody{display:none;padding:0 20px 20px}
+.cbody.open{display:block}
+.chelp{margin:0 0 16px;font-size:13px;color:var(--mute);max-width:70ch}
+
+/* CTA panels */
+.refine,.adv{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.refine{border-left:4px solid var(--blue)}
+.adv{border-left:4px solid var(--gold);background:linear-gradient(180deg,#FFFDF7,#fff)}
+.rtext{flex:1;min-width:250px}
+.refine h3,.adv h3{margin:0 0 5px;font-size:16px;color:var(--navy);font-weight:700}
+.refine p,.adv p{margin:0;font-size:13.5px;color:var(--mute);max-width:64ch}
+button.gold{background:var(--gold);color:var(--navy)}
+button.gold:hover{background:#F2AE22}
+
+/* Modal */
+.scrim{position:fixed;inset:0;z-index:100;background:rgba(4,20,48,.52);
+  display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.scrim[hidden]{display:none}
+.modal{position:relative;background:#fff;border-radius:14px;max-width:560px;width:100%;
+  padding:30px 30px 24px;box-shadow:0 20px 60px rgba(0,20,60,.3);
+  animation:pop .2s ease-out;max-height:calc(100vh - 40px);overflow-y:auto}
+@keyframes pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.modal{animation:none}}
+.mclose{position:absolute;top:12px;right:12px;width:32px;height:32px;padding:0;border-radius:50%;
+  background:transparent;color:var(--mute);font-size:21px;line-height:1;font-weight:400}
+.mclose:hover{background:#F0F3F8;color:var(--ink)}
+.meyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);font-weight:700}
+.modal h3{margin:5px 0 9px;font-size:23px;color:var(--navy);font-weight:700;letter-spacing:-.01em}
+.mlede{margin:0 0 18px;font-size:14px;color:var(--mute);line-height:1.55}
+.mlist{margin:0 0 18px;padding:0;list-style:none}
+.mlist li{position:relative;padding:0 0 11px 20px;font-size:13.5px;color:var(--ink);line-height:1.5}
+.mlist li:before{content:"";position:absolute;left:0;top:7px;width:6px;height:6px;
+  border-radius:50%;background:var(--gold)}
+.mlist li b{color:var(--navy);font-weight:700}
+.mflag{background:#FBEAEA;border-left:3px solid var(--risk);border-radius:0 6px 6px 0;
+  padding:11px 14px;font-size:13px;color:var(--ink);margin-bottom:18px;line-height:1.5}
+.mflag b{color:var(--risk)}
+.mcta{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{display:inline-block;font-size:14px;font-weight:700;padding:11px 22px;border-radius:6px;
+  background:var(--navy);color:#fff;text-decoration:none}
+.btn:hover{background:#013a91}
+.btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.mfine{margin:14px 0 0;font-size:11.5px;color:var(--mute)}
+
 /* Legend */
 .legend{display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:11.5px;color:var(--mute);margin-bottom:16px}
 .legend span{display:flex;align-items:center;gap:6px}
@@ -183,7 +250,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 
   <!-- Lookup -->
   <div class="panel">
-    <h2>Find the bank</h2>
+    <h2>Find your bank</h2>
     <div class="lookup">
       <div class="field ac">
         <label for="bankname">Bank name</label>
@@ -202,10 +269,24 @@ button:disabled{opacity:.5;cursor:not-allowed}
     <div class="bankline" id="bankline"></div>
   </div>
 
+  <!-- Step rail -->
+  <ol class="rail" id="rail">
+    <li data-step="1" class="on"><b>1</b><span>Find your bank</span></li>
+    <li data-step="2"><b>2</b><span>Refine your score</span></li>
+    <li data-step="3"><b>3</b><span>Full ALM review</span></li>
+  </ol>
+
   <!-- Inputs -->
-  <div class="panel">
-    <h2>Inputs <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:400;">— gold border means you've overridden the filed value</span></h2>
-    <div class="grid" id="inputs">
+  <div class="panel collapse" id="inputpanel">
+    <button class="chead" id="inputtoggle" aria-expanded="false" aria-controls="inputbody">
+      <span class="ctitle">Inputs</span>
+      <span class="csum" id="inputsum">Load a bank to begin</span>
+      <span class="carrow" aria-hidden="true">▾</span>
+    </button>
+    <div class="cbody" id="inputbody">
+      <p class="chelp">Figures come straight from the latest call report. Anything you change picks up a gold
+        border. The five dashed fields aren't published by the FDIC — enter them to complete the score.</p>
+      <div class="grid" id="inputs">
 
       <div class="sub">Balance sheet</div>
       <div class="field"><label for="assets">Total assets ($000)</label><input id="assets" class="ov" type="number" step="1"></div>
@@ -245,8 +326,9 @@ button:disabled{opacity:.5;cursor:not-allowed}
       <div class="field"><label for="state">State peer group</label>
         <select id="state"></select>
       </div>
+      </div>
+      <div style="margin-top:16px"><button id="run">Rescore with my numbers</button></div>
     </div>
-    <div style="margin-top:16px"><button id="run">Score this balance sheet</button></div>
   </div>
 
   <!-- Results -->
@@ -294,13 +376,58 @@ button:disabled{opacity:.5;cursor:not-allowed}
       <ul id="actionlist"></ul>
     </div>
 
+    <!-- Level 2 gate -->
+    <div class="panel refine" id="refine">
+      <div class="rtext">
+        <h3 id="refinehead">Refine your score</h3>
+        <p id="refinesub"></p>
+      </div>
+      <button id="openinputs">Enter my numbers</button>
+    </div>
+
+    <!-- Level 3 gate -->
+    <div class="panel adv">
+      <div class="rtext">
+        <h3>Want the full picture?</h3>
+        <p>This scorecard reads filed data. A SouthState ALM review models your actual cash flows,
+           runs rate shocks against your balance sheet, and reports to your ALCO.</p>
+      </div>
+      <button id="openmodal" class="gold">Explore ALM services</button>
+    </div>
+
   </div>
 
   <div class="foot">
     <span>Call report data via FDIC BankFind. Scores are directional and not a substitute for a full ALCO review.</span>
-    <span class="pill" id="build">ALM v1.4</span>
+    <span class="pill" id="build">ALM v2.1</span>
   </div>
 
+</div>
+
+<!-- Advanced: ALM services modal -->
+<div class="scrim" id="scrim" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mtitle" id="modal">
+    <button class="mclose" id="mclose" aria-label="Close">×</button>
+    <div class="meyebrow">SouthState Correspondent</div>
+    <h3 id="mtitle">Full ALM review</h3>
+    <p class="mlede">This scorecard reads filed data. A full review works from your actual balance sheet —
+      not just the ratios the call report exposes.</p>
+
+    <ul class="mlist">
+      <li><b>Income simulation</b> — net interest income modeled across rate shocks and non-parallel shifts, on your cash flows.</li>
+      <li><b>Economic value of equity</b> — the long-horizon view the ratios above can't reach.</li>
+      <li><b>Deposit study</b> — actual betas and decay rates for your depositors, replacing the assumption you entered.</li>
+      <li><b>Independent model validation</b> — documentation examiners expect, prepared for your ALCO.</li>
+    </ul>
+
+    <div class="mflag" id="mflag" hidden></div>
+
+    <div class="mcta">
+      <a class="btn" id="mcontact" href="https://www.southstatecorrespondent.com/contact/" target="_blank" rel="noopener">Talk to an ALM specialist</a>
+      <button class="ghost" id="mlater">Not right now</button>
+    </div>
+    <p class="mfine">We'll bring your scorecard to the first conversation — no need to reassemble it.</p>
+  </div>
 </div>
 
 <script>
@@ -314,7 +441,7 @@ var FDIC = "https://banks.data.fdic.gov/api";
 function viaProxy(fdicUrl){
   return PROXY + "/?url=" + encodeURIComponent(fdicUrl);
 }
-var BUILD = "ALM v1.4 · " + new Date().toISOString().slice(0,10);
+var BUILD = "ALM v2.1 · " + new Date().toISOString().slice(0,10);
 document.getElementById("build").textContent = BUILD;
 
 var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
@@ -434,6 +561,12 @@ function loadByCert(cert){
         (d.CITY ? " · " + d.CITY : "") + (d.STALP ? ", " + d.STALP : "") +
         (f.REPDTE ? " · Report date " + String(f.REPDTE) : "") + "</span>";
       setStatus("Loaded. Five fields aren't in the FDIC dataset — repricing buckets, AOCI, uninsured deposits, and deposit beta. Enter those from the call report or your ALCO package to complete the score.");
+      // Basic level: inputs stay closed, score runs on filed data alone.
+      $("inputtoggle").disabled = false;
+      setInputs(false);
+      updateInputSummary();
+      setStep(1);
+      $("run").click();
     });
   }).catch(function(e){
     setStatus(e.message || "Couldn't reach the FDIC service. Enter values manually below.", true);
@@ -805,6 +938,113 @@ function renderTrends(){
     "regardless of level. Trends use filed call report data only — manual overrides don't affect this panel.";
 }
 
+/* ---------- Level flow ---------- */
+
+var MANUAL = ["ea3y","liab1y","aoci","uninsured","beta"];
+var level = 1;              // 1 basic, 2 refining, 3 modal seen
+var modalShown = false;     // auto-open fires at most once
+var lastFocus = null;
+
+function setStep(n){
+  var lis = $("rail").querySelectorAll("li");
+  for (var i=0;i<lis.length;i++){
+    var s = i+1;
+    lis[i].classList.toggle("on", s === n);
+    lis[i].classList.toggle("done", s < n);
+  }
+}
+
+function inputsOpen(){ return $("inputbody").classList.contains("open"); }
+
+function setInputs(open){
+  $("inputbody").classList.toggle("open", open);
+  $("inputtoggle").setAttribute("aria-expanded", open ? "true" : "false");
+  resize();
+}
+
+function manualCount(){
+  var n = 0;
+  MANUAL.forEach(function(f){
+    var x = parseFloat($(f).value);
+    if (isFinite(x)) n++;
+  });
+  return n;
+}
+
+function updateInputSummary(){
+  var n = manualCount();
+  $("inputsum").textContent = n === MANUAL.length
+    ? "All " + MANUAL.length + " manual fields entered"
+    : n + " of " + MANUAL.length + " manual fields entered · " + (MANUAL.length - n) + " to go";
+}
+
+$("inputtoggle").addEventListener("click", function(){
+  if ($("inputtoggle").disabled) return;
+  setInputs(!inputsOpen());
+});
+
+$("openinputs").addEventListener("click", function(){
+  level = Math.max(level, 2);
+  setStep(2);
+  setInputs(true);
+  $("inputpanel").scrollIntoView({behavior:"smooth", block:"start"});
+  post("SCROLL_TOP");
+  var first = MANUAL.filter(function(f){ return !isFinite(parseFloat($(f).value)); })[0];
+  if (first) setTimeout(function(){ $(first).focus(); }, 320);
+  track("alm_refine_open", {});
+});
+
+MANUAL.forEach(function(f){
+  $(f).addEventListener("input", updateInputSummary);
+});
+
+/* ---------- Advanced modal ---------- */
+
+function openModal(reason){
+  lastFocus = document.activeElement;
+  $("scrim").hidden = false;
+  level = 3; setStep(3);
+  modalShown = true;
+  document.addEventListener("keydown", modalKeys);
+  setTimeout(function(){ $("mclose").focus(); }, 30);
+  track("alm_modal_open", {reason: reason});
+  resize();
+}
+
+function closeModal(){
+  $("scrim").hidden = true;
+  document.removeEventListener("keydown", modalKeys);
+  if (lastFocus && lastFocus.focus) lastFocus.focus();
+  // Step falls back to whichever level the user actually completed.
+  setStep(manualCount() > 0 ? 2 : 1);
+  resize();
+}
+
+function modalKeys(e){
+  if (e.key === "Escape"){ closeModal(); return; }
+  if (e.key !== "Tab") return;
+  // Trap focus inside the dialog.
+  var f = $("modal").querySelectorAll('button,[href],input,select,textarea');
+  var list = [];
+  for (var i=0;i<f.length;i++){ if (!f[i].disabled && f[i].offsetParent !== null) list.push(f[i]); }
+  if (!list.length) return;
+  var first = list[0], last = list[list.length-1];
+  if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+}
+
+$("openmodal").addEventListener("click", function(){ openModal("click"); });
+$("mclose").addEventListener("click", closeModal);
+$("mlater").addEventListener("click", closeModal);
+$("scrim").addEventListener("mousedown", function(e){
+  if (e.target === $("scrim")) closeModal();
+});
+$("mcontact").addEventListener("click", function(){
+  track("alm_contact_click", {score: lastScore, cert: certNum});
+});
+
+var lastScore = null;
+
 $("run").addEventListener("click", function(){
   var v = {};
   FIELDS.forEach(function(f){ v[f] = num(f); });
@@ -922,9 +1162,44 @@ $("run").addEventListener("click", function(){
   }
 
   $("results").classList.remove("hidden");
+  lastScore = total;
+
+  // Level 2 gate: only pitch refinement while manual fields are still blank.
+  var missing = MANUAL.length - manualCount();
+  var refine = $("refine");
+  if (missing > 0){
+    refine.style.display = "";
+    $("refinehead").textContent = missing === MANUAL.length
+      ? "This score is built on filed data alone"
+      : "You're " + missing + " field" + (missing===1?"":"s") + " from a complete score";
+    $("refinesub").textContent = missing === MANUAL.length
+      ? "Repricing buckets, AOCI, uninsured deposits, and deposit beta aren't published by the FDIC. " +
+        "They drive over half the composite — entering them changes the picture materially."
+      : "The remaining fields still carry weight in the pillars flagged above.";
+    $("openinputs").textContent = manualCount() > 0 ? "Finish my numbers" : "Enter my numbers";
+  } else {
+    refine.style.display = "none";
+  }
+
+  updateInputSummary();
+  if (level < 2 && missing < MANUAL.length) level = 2;
+  setStep(missing === 0 ? 2 : level);
+
   $("results").scrollIntoView({behavior:"smooth", block:"start"});
   post("SCROLL_TOP");
-  track("alm_score", {score: total, cert: certNum, band: band, state: st});
+  track("alm_score", {score: total, cert: certNum, band: band, state: st,
+                      manual_entered: manualCount()});
+
+  // Level 3: auto-open once on a weak score, but only after the user has
+  // actually supplied numbers — pitching services on a partial pull is noise.
+  if (!modalShown && total != null && total < 45 && missing === 0){
+    var weak = flagged.slice(0,2).map(function(f){ return f.m.label; });
+    var flag = $("mflag");
+    flag.hidden = false;
+    flag.innerHTML = "Your composite scored <b>" + total + " of 100</b>" +
+      (weak.length ? ", with " + esc(weak.join(" and ")) + " furthest from peer." : ".");
+    setTimeout(function(){ openModal("weak_score"); }, 900);
+  }
 });
 
 /* ---------- Host integration ---------- */
@@ -939,6 +1214,13 @@ function resize(){ post("RESIZE", {height: document.documentElement.scrollHeight
 window.addEventListener("load", resize);
 window.addEventListener("resize", resize);
 if (window.ResizeObserver) new ResizeObserver(resize).observe(document.body);
+
+/* ---------- Init ---------- */
+// Level 1 starts locked: nothing to configure until a bank is loaded.
+$("inputtoggle").disabled = true;
+setInputs(false);
+setStep(1);
+nameInput.focus();
 
 })();
 </script>
