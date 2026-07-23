@@ -165,7 +165,13 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .chelp{margin:0 0 16px;font-size:13px;color:var(--mute);max-width:70ch}
 
 /* CTA panels */
-.refine,.adv{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.refine,.adv,.donebar{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.donebar{border-left:4px solid var(--good);background:linear-gradient(180deg,#F4FBF7,#fff)}
+.donebar h3{margin:0 0 5px;font-size:16px;color:var(--navy);font-weight:700;
+  display:flex;align-items:center;gap:8px}
+.donebar p{margin:0;font-size:13.5px;color:var(--mute);max-width:64ch}
+.dchk{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;
+  border-radius:50%;background:var(--good);color:#fff;font-size:11px;flex:0 0 19px}
 .refine{border-left:4px solid var(--blue)}
 .adv{border-left:4px solid var(--gold);background:linear-gradient(180deg,#FFFDF7,#fff)}
 .rtext{flex:1;min-width:250px}
@@ -494,8 +500,17 @@ button.gold:hover{background:#F2AE22}
         <button id="openinputs">Enter my numbers</button>
       </div>
 
+      <!-- Shown once all five manual fields are in -->
+      <div class="panel donebar" id="refinedone" style="display:none">
+        <div class="rtext">
+          <h3><span class="dchk" aria-hidden="true">✓</span>Score is complete</h3>
+          <p id="donesub"></p>
+        </div>
+        <button id="opendone" class="gold">Book an ALM review</button>
+      </div>
+
       <!-- Level 3 gate -->
-      <div class="panel adv">
+      <div class="panel adv" id="advpanel">
         <div class="rtext">
           <h3>Want the full picture?</h3>
           <p>This scorecard reads filed data. A SouthState ALM review models your actual cash flows,
@@ -509,7 +524,7 @@ button.gold:hover{background:#F2AE22}
 
   <div class="foot">
     <span>Call report data via FDIC BankFind. Scores are directional and not a substitute for a full ALCO review.</span>
-    <span class="pill" id="build">ALM v2.4</span>
+    <span class="pill" id="build">ALM v2.5</span>
   </div>
 
 </div>
@@ -551,7 +566,7 @@ var FDIC = "https://banks.data.fdic.gov/api";
 function viaProxy(fdicUrl){
   return PROXY + "/?url=" + encodeURIComponent(fdicUrl);
 }
-var BUILD = "ALM v2.4 · " + new Date().toISOString().slice(0,10);
+var BUILD = "ALM v2.5 · " + new Date().toISOString().slice(0,10);
 document.getElementById("build").textContent = BUILD;
 
 var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
@@ -1223,8 +1238,10 @@ function closeModal(){
   $("scrim").hidden = true;
   document.removeEventListener("keydown", modalKeys);
   if (lastFocus && lastFocus.focus) lastFocus.focus();
-  // Step falls back to whichever level the user actually completed.
-  setStep(manualCount() > 0 ? 2 : 1);
+  // Fall back to the furthest step actually completed — closing the modal
+  // shouldn't undo a finished refine step.
+  var n = manualCount();
+  setStep(n === MANUAL.length ? 3 : (n > 0 ? 2 : 1));
   resize();
 }
 
@@ -1242,6 +1259,7 @@ function modalKeys(e){
 }
 
 $("openmodal").addEventListener("click", function(){ openModal("click"); });
+$("opendone").addEventListener("click", function(){ openModal("complete"); });
 $("mclose").addEventListener("click", closeModal);
 $("mlater").addEventListener("click", closeModal);
 $("scrim").addEventListener("mousedown", function(e){
@@ -1382,11 +1400,15 @@ $("run").addEventListener("click", function(){
     ? "So what should you do about it?"
     : "Where the attention is best spent";
 
-  // Level 2 gate: only pitch refinement while manual fields are still blank.
-  var missing = MANUAL.length - manualCount();
+  // Level 2 gate: pitch refinement while manual fields are still blank.
+  var entered = manualCount();
+  var missing = MANUAL.length - entered;
   var refine = $("refine");
+  var done = $("refinedone");
   if (missing > 0){
     refine.style.display = "";
+    done.style.display = "none";
+    $("advpanel").style.display = "";
     $("refinehead").textContent = missing === MANUAL.length
       ? "This score is built on filed data alone"
       : "You're " + missing + " field" + (missing===1?"":"s") + " from a complete score";
@@ -1394,14 +1416,21 @@ $("run").addEventListener("click", function(){
       ? "Repricing buckets, AOCI, uninsured deposits, and deposit beta aren't published by the FDIC. " +
         "They drive over half the composite — entering them changes the picture materially."
       : "The remaining fields still carry weight in the pillars flagged above.";
-    $("openinputs").textContent = manualCount() > 0 ? "Finish my numbers" : "Enter my numbers";
+    $("openinputs").textContent = entered > 0 ? "Finish my numbers" : "Enter my numbers";
   } else {
+    // All five in — the refine step is finished, so hand off to the ALM prompt.
     refine.style.display = "none";
+    done.style.display = "";
+    $("advpanel").style.display = "none";
+    $("donesub").textContent = total != null && total < 45
+      ? "Scoring " + total + " of 100 on complete inputs. A modeled review is the next step past what filed ratios can show."
+      : "Every input is in. A modeled review goes past ratios to your actual cash flows and rate shocks.";
   }
 
   updateInputSummary();
-  if (level < 2 && missing < MANUAL.length) level = 2;
-  setStep(missing === 0 ? 2 : level);
+  // Step 2 is complete only when every manual field is in; until then it's current.
+  if (entered > 0) level = Math.max(level, 2);
+  setStep(missing === 0 ? 3 : (entered > 0 ? 2 : level));
 
   $("results").scrollIntoView({behavior:"smooth", block:"start"});
   post("SCROLL_TOP");
