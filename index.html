@@ -82,6 +82,12 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .sub:first-child{margin-top:0}
 .hint{font-size:11px;color:var(--mute)}
 .edited input{border-color:var(--gold);background:#FFFDF6}
+/* Manual-entry fields: FDIC doesn't publish these, so an empty box is expected,
+   not a failure. Dashed border reads as "awaiting you". */
+.man input{border-style:dashed;border-color:#C4D0E0}
+.man input:focus{border-style:solid}
+.man .hint{color:var(--blue);font-weight:500}
+.man.edited input{border-style:solid;border-color:var(--gold)}
 
 /* Score */
 .scorehead{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
@@ -106,6 +112,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .pillar h4{margin:0;font-size:14px;font-weight:700;color:var(--navy)}
 .pillar .pscore{font-size:20px;font-weight:700}
 .pillar .pweight{font-size:11px;color:var(--mute);margin-bottom:11px}
+.pillar .partial{color:var(--warn);font-weight:700}
 .bar{height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:13px}
 .bar i{display:block;height:100%;border-radius:3px;transition:width .5s ease}
 
@@ -207,16 +214,16 @@ button:disabled{opacity:.5;cursor:not-allowed}
       <div class="field"><label for="deps">Total deposits ($000)</label><input id="deps" class="ov" type="number" step="1"></div>
 
       <div class="sub">Rate sensitivity</div>
-      <div class="field"><label for="ea3y">Earning assets repricing &gt; 3 yrs (%)</label><input id="ea3y" class="ov" type="number" step="0.01"></div>
-      <div class="field"><label for="liab1y">Liabilities repricing &lt; 1 yr (%)</label><input id="liab1y" class="ov" type="number" step="0.01"></div>
-      <div class="field"><label for="aoci">AOCI as % of tier 1 capital</label><input id="aoci" class="ov" type="number" step="0.01"><div class="hint">Negative = unrealized loss</div></div>
+      <div class="field man"><label for="ea3y">Earning assets repricing &gt; 3 yrs (%)</label><input id="ea3y" class="ov" type="number" step="0.01"><div class="hint">Manual · Call Report Sch. RC-B maturity distribution</div></div>
+      <div class="field man"><label for="liab1y">Liabilities repricing &lt; 1 yr (%)</label><input id="liab1y" class="ov" type="number" step="0.01"><div class="hint">Manual · Call Report Sch. RC-E</div></div>
+      <div class="field man"><label for="aoci">AOCI as % of tier 1 capital</label><input id="aoci" class="ov" type="number" step="0.01"><div class="hint">Manual · Sch. RC-R. Negative = unrealized loss</div></div>
       <div class="field"><label for="nim">Net interest margin (%)</label><input id="nim" class="ov" type="number" step="0.01"></div>
 
       <div class="sub">Funding mix &amp; deposit beta</div>
       <div class="field"><label for="noninterest">Noninterest-bearing deposits (% of total)</label><input id="noninterest" class="ov" type="number" step="0.01"></div>
       <div class="field"><label for="timedeps">Time deposits (% of total)</label><input id="timedeps" class="ov" type="number" step="0.01"></div>
-      <div class="field"><label for="uninsured">Uninsured deposits (% of total)</label><input id="uninsured" class="ov" type="number" step="0.01"></div>
-      <div class="field"><label for="beta">Cumulative deposit beta (%)</label><input id="beta" class="ov" type="number" step="0.01"><div class="hint">Change in cost of deposits ÷ change in fed funds</div></div>
+      <div class="field man"><label for="uninsured">Uninsured deposits (% of total)</label><input id="uninsured" class="ov" type="number" step="0.01"><div class="hint">Manual · Sch. RC-O memo item</div></div>
+      <div class="field man"><label for="beta">Cumulative deposit beta (%)</label><input id="beta" class="ov" type="number" step="0.01"><div class="hint">Manual · Change in cost of deposits ÷ change in fed funds</div></div>
 
       <div class="sub">Liquidity</div>
       <div class="field"><label for="ldr">Loan-to-deposit ratio (%)</label><input id="ldr" class="ov" type="number" step="0.01"></div>
@@ -291,7 +298,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 
   <div class="foot">
     <span>Call report data via FDIC BankFind. Scores are directional and not a substitute for a full ALCO review.</span>
-    <span class="pill" id="build">ALM v1.3</span>
+    <span class="pill" id="build">ALM v1.4</span>
   </div>
 
 </div>
@@ -307,7 +314,7 @@ var FDIC = "https://banks.data.fdic.gov/api";
 function viaProxy(fdicUrl){
   return PROXY + "/?url=" + encodeURIComponent(fdicUrl);
 }
-var BUILD = "ALM v1.3 · " + new Date().toISOString().slice(0,10);
+var BUILD = "ALM v1.4 · " + new Date().toISOString().slice(0,10);
 document.getElementById("build").textContent = BUILD;
 
 var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
@@ -377,9 +384,9 @@ function mapFinancial(f){
     brokered: pct(f.BRO, deps),
     borrow: pct((f.FREPO||0) + (f.OTHBFHLB||0) + (f.OTHBORR||0), assets),
     onhand: pct((f.CHBAL||0) + (f.SCAF||0), assets),
-    aoci: pct(f.EQNM, f.RBCT1J),
-    // These aren't published as single fields — leave blank for manual entry
-    ea3y: null, liab1y: null, uninsured: null, beta: null
+    // Not available in the BankFind financials dataset (161 fields, no AOCI and
+    // no repricing buckets). Verified against the live API — these stay manual.
+    aoci: null, ea3y: null, liab1y: null, uninsured: null, beta: null
   };
 }
 
@@ -412,7 +419,7 @@ function loadByCert(cert){
     var d = rows[0].data || rows[0];
     bankMeta = d; certNum = cert;
     var fin = viaProxy(FDIC + "/financials?filters=CERT:" + encodeURIComponent(cert) +
-      "&fields=REPDTE,ASSET,DEP,DEPNI,DEPTIME,TS,TSLT100,LNLSNET,LNLSGR,SC,SCAF,CHBAL,BRO,FREPO,OTHBFHLB,OTHBORR,NIMY,EQNM,RBCT1J" +
+      "&fields=REPDTE,ASSET,DEP,DEPNI,DEPTIME,TS,TSLT100,LNLSNET,LNLSGR,SC,SCAF,CHBAL,BRO,FREPO,OTHBFHLB,OTHBORR,NIMY" +
       "&sort_by=REPDTE&sort_order=DESC&limit=5");
     return req(fin).then(function(fj){
       var frows = (fj && fj.data) || [];
@@ -426,7 +433,7 @@ function loadByCert(cert){
       bl.innerHTML = "<strong>" + (d.NAME || "Bank") + "</strong> &nbsp;<span>Cert " + cert +
         (d.CITY ? " · " + d.CITY : "") + (d.STALP ? ", " + d.STALP : "") +
         (f.REPDTE ? " · Report date " + String(f.REPDTE) : "") + "</span>";
-      setStatus("Loaded. Fields FDIC doesn't publish directly — repricing buckets, uninsured deposits, deposit beta — are blank; fill those in.");
+      setStatus("Loaded. Five fields aren't in the FDIC dataset — repricing buckets, AOCI, uninsured deposits, and deposit beta. Enter those from the call report or your ALCO package to complete the score.");
     });
   }).catch(function(e){
     setStatus(e.message || "Couldn't reach the FDIC service. Enter values manually below.", true);
@@ -812,6 +819,7 @@ $("run").addEventListener("click", function(){
   PILLARS.forEach(function(p){
     var scores = p.metrics.map(function(m){ return sc(v[m.id], m.best, m.worst); });
     var ps = avg(scores);
+    var filledN = scores.filter(function(x){ return x != null; }).length;
     pscores[p.key] = ps;
     if (ps != null){ weighted += ps * p.weight; wsum += p.weight; }
 
@@ -829,7 +837,11 @@ $("run").addEventListener("click", function(){
     pilHtml += '<div class="pillar">' +
       '<div class="ptop"><h4>' + p.name + '</h4>' +
       '<span class="pscore" style="color:' + color(ps) + '">' + (ps==null?"—":Math.round(ps)) + '</span></div>' +
-      '<div class="pweight">' + Math.round(p.weight*100) + '% of composite</div>' +
+      '<div class="pweight">' + Math.round(p.weight*100) + '% of composite · ' +
+        (filledN === p.metrics.length
+          ? 'all ' + p.metrics.length + ' metrics'
+          : '<b class="partial">' + filledN + ' of ' + p.metrics.length + ' metrics entered</b>') +
+      '</div>' +
       '<div class="bar"><i style="width:' + (ps==null?0:ps) + '%;background:' + color(ps) + '"></i></div>' +
       rows + '</div>';
   });
