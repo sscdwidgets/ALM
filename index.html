@@ -499,7 +499,7 @@ button.gold:hover{background:#F2AE22}
     <div class="ptrack"><div class="pfill" id="pfill"></div></div>
     <ol>
       <li data-step="1" class="on"><b><span class="pnum">1</span><span class="pchk" aria-hidden="true">✓</span></b><span class="plabel">Find your bank</span></li>
-      <li data-step="2"><b><span class="pnum">2</span><span class="pchk" aria-hidden="true">✓</span></b><span class="plabel">Refine your score</span></li>
+      <li data-step="2"><b><span class="pnum">2</span><span class="pchk" aria-hidden="true">✓</span></b><span class="plabel">Take a deeper look</span></li>
       <li data-step="3"><b><span class="pnum">3</span><span class="pchk" aria-hidden="true">✓</span></b><span class="plabel">Full ALM review</span></li>
     </ol>
   </div>
@@ -507,7 +507,7 @@ button.gold:hover{background:#F2AE22}
   <!-- Level 2: the five fields FDIC doesn't publish -->
   <div class="panel collapse refinepanel" id="inputpanel">
     <button class="chead" id="inputtoggle" aria-expanded="false" aria-controls="inputbody">
-      <span class="ctitle">Refine your score</span>
+      <span class="ctitle">Take a deeper look</span>
       <span class="csum" id="inputsum">Load a bank to begin</span>
       <span class="carrow" aria-hidden="true">▾</span>
     </button>
@@ -723,7 +723,7 @@ button.gold:hover{background:#F2AE22}
       <!-- Level 2 gate -->
       <div class="panel refine" id="refine">
         <div class="rtext">
-          <h3 id="refinehead">Refine your score</h3>
+          <h3 id="refinehead">Take a deeper look</h3>
           <p id="refinesub"></p>
         </div>
         <button id="openinputs">Enter my numbers</button>
@@ -744,7 +744,7 @@ button.gold:hover{background:#F2AE22}
 
   <div class="foot">
     <span>Call report data via FDIC BankFind. Scores are directional and not a substitute for a full ALCO review.</span>
-    <span class="pill" id="build">ALM v4.5</span>
+    <span class="pill" id="build">ALM v4.6</span>
   </div>
 
 </div>
@@ -786,7 +786,7 @@ var FDIC = "https://banks.data.fdic.gov/api";
 function viaProxy(fdicUrl){
   return PROXY + "/?url=" + encodeURIComponent(fdicUrl);
 }
-var BUILD = "ALM v4.5 · " + new Date().toISOString().slice(0,10);
+var BUILD = "ALM v4.6 · " + new Date().toISOString().slice(0,10);
 document.getElementById("build").textContent = BUILD;
 
 var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
