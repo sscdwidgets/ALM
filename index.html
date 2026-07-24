@@ -397,7 +397,6 @@ button.gold:hover{background:#F2AE22}
 .legend span{display:flex;align-items:center;gap:6px}
 .legend i{display:inline-block;border-radius:2px}
 .k-you{width:3px;height:15px;background:var(--navy)}
-.k-size{width:2px;height:15px;background:var(--blue)}
 .k-state{width:2px;height:13px;background:var(--gold);border-radius:0}
 .bandkey{margin-left:auto}
 
@@ -615,7 +614,6 @@ button.gold:hover{background:#F2AE22}
           the gold marker is rank among <b>all banks in the state</b>, any size. Weakest quartile left, strongest right.</p>
         <div class="legend">
           <span><i class="k-you"></i>This bank</span>
-          <span><i class="k-size"></i>Median</span>
           <span><i class="k-state"></i><span id="lg-state">State rank</span></span>
           <span id="lg-size" class="lgsize"></span>
         </div>
@@ -719,7 +717,7 @@ button.gold:hover{background:#F2AE22}
 
   <div class="foot">
     <span>Call report data via FDIC BankFind. Scores are directional and not a substitute for a full ALCO review.</span>
-    <span class="pill" id="build">ALM v4.2</span>
+    <span class="pill" id="build">ALM v4.3</span>
   </div>
 
 </div>
@@ -761,7 +759,7 @@ var FDIC = "https://banks.data.fdic.gov/api";
 function viaProxy(fdicUrl){
   return PROXY + "/?url=" + encodeURIComponent(fdicUrl);
 }
-var BUILD = "ALM v4.2 · " + new Date().toISOString().slice(0,10);
+var BUILD = "ALM v4.3 · " + new Date().toISOString().slice(0,10);
 document.getElementById("build").textContent = BUILD;
 
 var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
@@ -1357,16 +1355,11 @@ function pstrip(m, val, sizeD, stateD, sizeMed){
     blocks += '<rect x="' + (i*25) + '" y="7" width="25" height="9" fill="' + tints[i] + '"/>';
   }
   var divs = "";
-  [25,75].forEach(function(p){
+  [25,50,75].forEach(function(p){
     divs += '<rect x="' + (p-0.15) + '" y="7" width="0.3" height="9" fill="#fff"/>';
   });
 
   function cx(p){ return Math.max(1.2, Math.min(W-1.2, p)); }
-
-  // Both groups are independent distributions, so each has its own median at 50
-  // in its own percentile space. The strip is drawn in SIZE-peer space, with the
-  // state rank shown as a second marker rather than a point on the same scale.
-  var medLine = '<rect x="49.65" y="0.5" width="0.7" height="21" fill="var(--blue)" opacity=".9"/>';
 
   var youMark = (rank == null) ? "" :
     '<rect x="' + (cx(rank)-0.85).toFixed(2) + '" y="3" width="1.7" height="17" fill="var(--navy)" rx="0.5"/>';
@@ -1377,7 +1370,7 @@ function pstrip(m, val, sizeD, stateD, sizeMed){
   var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" width="100%" ' +
     'height="' + H + '" role="img" aria-label="' + esc(m.label) + ': ' +
     (rank==null ? "unranked" : Math.round(rank) + "th percentile among size peers") + '">' +
-    blocks + divs + medLine + stateTick + youMark + '</svg>';
+    blocks + divs + stateTick + youMark + '</svg>';
 
   var band = rank == null ? "" :
     rank >= 75 ? "top quartile" :
