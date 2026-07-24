@@ -516,8 +516,8 @@ button.gold:hover{background:#F2AE22}
       <span class="carrow" aria-hidden="true">▾</span>
     </button>
     <div class="cbody" id="inputbody">
-      <p class="chelp">The FDIC doesn't publish these three. They anchor the rate-sensitivity pillar, which carries 35%
-        of the composite. Pull them from the call report schedules noted under each field, or from your
+      <p class="chelp">The FDIC doesn't publish these three. They anchor the rate-sensitivity pillar — until they're in, that pillar carries
+        reduced weight in the composite, shown on each card. Pull them from the call report schedules noted under each field, or from your
         ALCO package.</p>
 
       <div class="grid" id="manualgrid">
@@ -555,6 +555,7 @@ button.gold:hover{background:#F2AE22}
 
       <div class="sub">Rate sensitivity</div>
       <div class="field"><label for="nim">Net interest margin (%)</label><input id="nim" class="ov" type="number" step="0.01"></div>
+      <div class="field"><label for="abeta">Asset-yield beta (%)</label><input id="abeta" class="ov" type="number" step="0.01"><div class="hint">Derived from 5 quarters of earning-asset yield</div></div>
 
       <div class="sub">Funding mix</div>
       <div class="field"><label for="noninterest">Noninterest-bearing deposits (% of total)</label><input id="noninterest" class="ov" type="number" step="0.01"></div>
@@ -747,7 +748,7 @@ button.gold:hover{background:#F2AE22}
 
   <div class="foot">
     <span>Call report data via FDIC BankFind. Scores are directional and not a substitute for a full ALCO review.</span>
-    <span class="pill" id="build">ALM v4.8</span>
+    <span class="pill" id="build">ALM v4.9</span>
   </div>
 
 </div>
@@ -789,7 +790,7 @@ var FDIC = "https://banks.data.fdic.gov/api";
 function viaProxy(fdicUrl){
   return PROXY + "/?url=" + encodeURIComponent(fdicUrl);
 }
-var BUILD = "ALM v4.8 · " + new Date().toISOString().slice(0,10);
+var BUILD = "ALM v4.9 · " + new Date().toISOString().slice(0,10);
 document.getElementById("build").textContent = BUILD;
 
 var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
@@ -800,7 +801,7 @@ STATES.forEach(function(s){
   stateSel.appendChild(o);
 });
 
-var FIELDS = ["assets","loans","secs","deps","ea3y","liab1y","aoci","nim","noninterest","timedeps","uninsured","beta","ldr","onhand","brokered","borrow"];
+var FIELDS = ["assets","loans","secs","deps","ea3y","liab1y","aoci","nim","abeta","noninterest","timedeps","uninsured","beta","ldr","onhand","brokered","borrow"];
 var filed = {};   // values pulled from FDIC
 var certNum = null;
 var bankMeta = null;
@@ -866,7 +867,7 @@ function mapFinancial(f){
     // RBC1AAJ is contaminated by intangibles and other regulatory adjustments,
     // so deriving it would produce a confident wrong number. Beta is filled in
     // separately from the five-quarter history.
-    aoci: null, ea3y: null, liab1y: null, beta: null
+    aoci: null, ea3y: null, liab1y: null, beta: null, abeta: null
   };
 }
 
@@ -883,21 +884,39 @@ var FF_BY_QUARTER = {
 };
 
 function deriveBeta(hist){
-  if (!hist || hist.length < 2) return null;
-  var pts = hist.map(function(f){
+  return betaFrom(hist, function(f){
     var dep = f.DEP, exp = f.EINTEXP;
     if (!dep || exp == null || !isFinite(exp)) return null;
-    // EINTEXP is year-to-date on the call report; annualized cost of funds.
-    var cost = (exp / dep) * 100;
+    return (exp / dep) * 100;
+  });
+}
+
+/* Asset-yield beta: how much the asset side actually repriced through the same
+   rate move. The genuine counterpart to deposit beta — a low reading means
+   assets are locked in long while funding reprices, which IS rate sensitivity
+   in a way NIM alone can't show. INTINCY is yield on earning assets, already
+   expressed as a percentage. */
+function deriveAssetBeta(hist){
+  return betaFrom(hist, function(f){
+    var y = f.INTINCY;
+    return (y == null || !isFinite(y)) ? null : y;
+  });
+}
+
+/* Shared: change in a rate series ÷ change in fed funds across the window. */
+function betaFrom(hist, getRate){
+  if (!hist || hist.length < 2) return null;
+  var pts = hist.map(function(f){
+    var r = getRate(f);
     var ff = FF_BY_QUARTER[f.REPDTE];
-    return (ff == null) ? null : {cost: cost, ff: ff};
+    return (r == null || ff == null) ? null : {r: r, ff: ff};
   }).filter(Boolean);
 
   if (pts.length < 2) return null;
   var first = pts[0], last = pts[pts.length-1];
   var dFF = last.ff - first.ff;
-  if (Math.abs(dFF) < 0.25) return null;   // no meaningful rate move to divide by
-  var beta = ((last.cost - first.cost) / dFF) * 100;
+  if (Math.abs(dFF) < 0.25) return null;
+  var beta = ((last.r - first.r) / dFF) * 100;
   if (!isFinite(beta)) return null;
   return Math.max(0, Math.min(150, beta));
 }
@@ -932,7 +951,7 @@ function loadByCert(cert){
     var d = rows[0].data || rows[0];
     bankMeta = d; certNum = cert;
     var fin = viaProxy(FDIC + "/financials?filters=CERT:" + encodeURIComponent(cert) +
-      "&fields=REPDTE,ASSET,DEP,DEPNI,DEPTIME,TS,TSLT100,LNLSNET,LNLSGR,SC,SCAF,CHBAL,BRO,FREPO,OTHBFHLB,OTHBORR,NIMY,DEPUNINS,EINTEXP" +
+      "&fields=REPDTE,ASSET,DEP,DEPNI,DEPTIME,TS,TSLT100,LNLSNET,LNLSGR,SC,SCAF,CHBAL,BRO,FREPO,OTHBFHLB,OTHBORR,NIMY,DEPUNINS,EINTEXP,INTINCY" +
       "&sort_by=REPDTE&sort_order=DESC&limit=5");
     return req(fin).then(function(fj){
       var frows = (fj && fj.data) || [];
@@ -941,10 +960,12 @@ function loadByCert(cert){
       history = frows.map(function(r){ return r.data || r; }).reverse();
       var vals = mapFinancial(f);
       vals.beta = deriveBeta(history);
+      vals.abeta = deriveAssetBeta(history);
       fill(vals);
       // Mark which fields came from derivation rather than a direct filing.
       $("beta").parentElement.classList.toggle("derived", vals.beta != null);
       $("uninsured").parentElement.classList.toggle("derived", vals.uninsured != null);
+      $("abeta").parentElement.classList.toggle("derived", vals.abeta != null);
       if (d.STALP) $("state").value = d.STALP;
       var bl = $("bankline");
       bl.style.display = "block";
@@ -1379,6 +1400,7 @@ var PILLARS = [
      {id:"ea3y",   label:"Assets repricing > 3 yrs", best:22, worst:48, unit:"%"},
      {id:"liab1y", label:"Liabilities repricing < 1 yr", best:32, worst:62, unit:"%"},
      {id:"aoci",   label:"AOCI / tier 1 capital", best:-2, worst:-28, unit:"%"},
+     {id:"abeta",  label:"Asset-yield beta", best:62, worst:18, unit:"%"},
      {id:"nim",    label:"Net interest margin", best:4.10, worst:2.60, unit:"%"}
    ]},
   {key:"funding", name:"Funding mix & beta", weight:0.35,
@@ -1930,14 +1952,25 @@ $("run").addEventListener("click", function(){
 
   var bandLabel = $("sizeband").options[$("sizeband").selectedIndex].text;
 
-  // Pillar scores
-  var pilHtml = "", weighted = 0, wsum = 0, pscores = {};
-  PILLARS.forEach(function(p){
+  // Two passes: the effective-weight total isn't known until every pillar has
+  // been measured, and each card needs to show its true share of that total.
+  var meta = PILLARS.map(function(p){
     var scores = p.metrics.map(function(m){ return sc(v[m.id], m.best, m.worst); });
     var ps = avg(scores);
     var filledN = scores.filter(function(x){ return x != null; }).length;
+    var coverage = filledN / p.metrics.length;
+    // Half credit for coverage, half for participating at all: a pillar at 20%
+    // coverage carries 60% of nominal weight, not 20%.
+    var effW = p.weight * (0.5 + 0.5 * coverage);
+    return {p:p, scores:scores, ps:ps, filledN:filledN, effW:(ps==null?0:effW)};
+  });
+  var wTotal = meta.reduce(function(a,m){ return a + m.effW; }, 0) || 1;
+
+  var pilHtml = "", weighted = 0, wsum = 0, pscores = {};
+  meta.forEach(function(mm){
+    var p = mm.p, scores = mm.scores, ps = mm.ps, filledN = mm.filledN, effW = mm.effW;
     pscores[p.key] = ps;
-    if (ps != null){ weighted += ps * p.weight; wsum += p.weight; }
+    if (ps != null){ weighted += ps * effW; wsum += effW; }
 
     var rows = p.metrics.map(function(m, i){
       var val = v[m.id], s = scores[i];
@@ -1953,10 +1986,11 @@ $("run").addEventListener("click", function(){
     pilHtml += '<div class="pillar">' +
       '<div class="ptop"><h4>' + p.name + '</h4>' +
       '<span class="pscore" style="color:' + color(ps) + '">' + (ps==null?"—":Math.round(ps)) + '</span></div>' +
-      '<div class="pweight">' + Math.round(p.weight*100) + '% of composite · ' +
+      '<div class="pweight">' +
         (filledN === p.metrics.length
-          ? 'all ' + p.metrics.length + ' metrics'
-          : '<b class="partial">' + filledN + ' of ' + p.metrics.length + ' entered</b>') +
+          ? Math.round(p.weight*100) + '% of composite · all ' + p.metrics.length + ' metrics'
+          : '<b class="partial">' + Math.round(effW/wTotal*100) + '% effective</b> · ' +
+            filledN + ' of ' + p.metrics.length + ' entered') +
       '</div>' +
       '<div class="bar"><i style="width:' + (ps==null?0:ps) + '%;background:' + color(ps) + '"></i></div>' +
       '<details class="pdetail" open><summary>Metrics</summary>' + rows + '</details>' +
@@ -2106,6 +2140,7 @@ $("run").addEventListener("click", function(){
     ea3y:"Shorten new production or add received-fixed swaps to pull duration in.",
     liab1y:"Term out a slice of funding so less of the liability book reprices inside a year.",
     aoci:"Model the capital effect of selling or restructuring the underwater portion of AFS.",
+    abeta:"Assets barely repriced through the last rate move — shorten new production or add floating-rate exposure.",
     nim:"Reprice loan production and audit the deposit book for accounts paying above the offered rate.",
     noninterest:"Push treasury management and operating accounts — that's the cheapest deposit growth available.",
     timedeps:"Build a CD maturity ladder and a retention offer before the next repricing wave.",
@@ -2166,8 +2201,8 @@ $("run").addEventListener("click", function(){
       ? "This score is built on filed data alone"
       : "You're " + missing + " field" + (missing===1?"":"s") + " from a complete score";
     $("refinesub").textContent = missing === MANUAL.length
-      ? "Repricing buckets and AOCI aren't published by the FDIC. They anchor rate sensitivity, " +
-        "which is 35% of the composite — entering them changes the picture materially."
+      ? "Repricing buckets and AOCI aren't published by the FDIC. Rate sensitivity is scoring on " +
+        "partial data and carries reduced weight until they're in."
       : "The remaining fields still carry weight in the pillars flagged above.";
     $("openinputs").textContent = entered > 0 ? "Finish my numbers" : "Enter my numbers";
   } else {
