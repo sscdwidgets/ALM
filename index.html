@@ -147,6 +147,13 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .pillar .partial{color:var(--warn);font-weight:700}
 .bar i{display:block;height:100%;border-radius:3px;transition:width .5s ease}
 
+/* Metrics the FDIC doesn't publish — awaiting the user's input. Gold matches
+   the override/manual language used on the input fields themselves. */
+.m.needsinput{background:#FFFCF4;border-left:2px solid var(--gold);
+  margin-left:-11px;padding-left:9px;border-radius:2px;cursor:help}
+.m.needsinput .lbl{color:var(--ink)}
+.numneed{color:#A8801F;font-weight:600;font-size:11px;letter-spacing:.02em}
+
 /* Metric rows */
 .m{display:flex;justify-content:space-between;align-items:center;gap:10px;
   padding:5px 0;border-bottom:1px solid #F0F3F8;font-size:12.5px}
@@ -155,6 +162,8 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .m .num{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 .m .peers{font-size:11px;color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.dotneed{background:transparent;border:1.5px dashed var(--gold);box-sizing:border-box;
+  width:9px;height:9px}
 
 /* Progress bar */
 .prog{position:relative;margin:0 0 13px;padding:2px 0 0}
@@ -748,7 +757,7 @@ button.gold:hover{background:#F2AE22}
 
   <div class="foot">
     <span>Call report data via FDIC BankFind. Scores are directional and not a substitute for a full ALCO review.</span>
-    <span class="pill" id="build">ALM v4.9</span>
+    <span class="pill" id="build">ALM v5.0</span>
   </div>
 
 </div>
@@ -790,7 +799,7 @@ var FDIC = "https://banks.data.fdic.gov/api";
 function viaProxy(fdicUrl){
   return PROXY + "/?url=" + encodeURIComponent(fdicUrl);
 }
-var BUILD = "ALM v4.9 · " + new Date().toISOString().slice(0,10);
+var BUILD = "ALM v5.0 · " + new Date().toISOString().slice(0,10);
 document.getElementById("build").textContent = BUILD;
 
 var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
@@ -1974,12 +1983,22 @@ $("run").addEventListener("click", function(){
 
     var rows = p.metrics.map(function(m, i){
       var val = v[m.id], s = scores[i];
-      var mark = peerMark(val, m, sizeP[m.id]);
+      var isManual = MANUAL.indexOf(m.id) >= 0;
+      var needsInput = isManual && val == null;
+      var pv = sizeP[m.id];
+      var hasPeer = pv != null && isFinite(pv);
+      var mark = hasPeer ? peerMark(val, m, pv) : null;
       var arrow = mark === "up" ? "▲" : mark === "down" ? "▼" : mark === "flat" ? "▬" : "";
-      return '<div class="m">' +
-        '<span class="lbl"><span class="dot" style="background:' + color(s) + '"></span>' + m.label + '</span>' +
-        '<span class="num">' + (val==null?"—":fmt(val,1)+m.unit) + '</span>' +
-        '<span class="peers ' + (mark||"flat") + '">' + arrow + ' ' + fmt(sizeP[m.id],1) + m.unit + '</span>' +
+      return '<div class="m' + (needsInput ? ' needsinput' : '') + '"' +
+          (needsInput ? ' title="Not published by the FDIC — enter it under Take a deeper look"' : '') + '>' +
+        '<span class="lbl">' +
+          (needsInput ? '<span class="dot dotneed"></span>'
+                      : '<span class="dot" style="background:' + color(s) + '"></span>') +
+          m.label + '</span>' +
+        '<span class="num' + (needsInput ? ' numneed' : '') + '">' +
+          (val==null ? (needsInput ? "needs input" : "—") : fmt(val,1)+m.unit) + '</span>' +
+        '<span class="peers ' + (mark||"flat") + '">' +
+          (hasPeer ? arrow + ' ' + fmt(pv,1) + m.unit : '') + '</span>' +
         '</div>';
     }).join("");
 
