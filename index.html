@@ -129,8 +129,9 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .pdetail{margin-top:7px}
 .pdetail[open]{margin-bottom:2px}
 .pdetail[open] summary{margin-bottom:4px}
-.pdetail summary{font-size:10.5px;color:var(--blue);cursor:pointer;list-style:none;
-  padding:2px 0;user-select:none}
+.pdetail summary{font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+  color:#9AA9BD;cursor:pointer;list-style:none;padding:2px 0;user-select:none}
+.pdetail summary:hover{color:var(--blue)}
 .pdetail summary::-webkit-details-marker{display:none}
 .pdetail summary:before{content:"▸";display:inline-block;margin-right:4px;transition:transform .18s}
 .pdetail[open] summary:before{transform:rotate(90deg)}
@@ -744,7 +745,7 @@ button.gold:hover{background:#F2AE22}
 
   <div class="foot">
     <span>Call report data via FDIC BankFind. Scores are directional and not a substitute for a full ALCO review.</span>
-    <span class="pill" id="build">ALM v4.6</span>
+    <span class="pill" id="build">ALM v4.7</span>
   </div>
 
 </div>
@@ -786,7 +787,7 @@ var FDIC = "https://banks.data.fdic.gov/api";
 function viaProxy(fdicUrl){
   return PROXY + "/?url=" + encodeURIComponent(fdicUrl);
 }
-var BUILD = "ALM v4.6 · " + new Date().toISOString().slice(0,10);
+var BUILD = "ALM v4.7 · " + new Date().toISOString().slice(0,10);
 document.getElementById("build").textContent = BUILD;
 
 var STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
@@ -1916,7 +1917,7 @@ $("run").addEventListener("click", function(){
           : '<b class="partial">' + filledN + ' of ' + p.metrics.length + ' entered</b>') +
       '</div>' +
       '<div class="bar"><i style="width:' + (ps==null?0:ps) + '%;background:' + color(ps) + '"></i></div>' +
-      '<details class="pdetail"><summary>Metrics</summary>' + rows + '</details>' +
+      '<details class="pdetail" open><summary>Metrics</summary>' + rows + '</details>' +
       '</div>';
   });
   $("pillars").innerHTML = pilHtml;
